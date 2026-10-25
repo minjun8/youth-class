@@ -1,0 +1,457 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>解疑島</title>
+<meta name="description" content="《一貫道疑問解答》二十六題互動導讀，青年班會課前預習用。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@400;700&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+<style>
+/* Layout: 靛色心海上五座問題島，二十六題點開成答問卡；與行由島同一套結構，換成佛燈金與夜靛。 */
+:root{
+  --sea:#DCE1EC; --ripple:#BCC5D9; --land:#F8F8FB; --land-edge:#9DA8C2;
+  --paper:#FCFCFE; --fg:#1A2033; --muted:#545D78; --line:#CED4E3;
+  --accent:#946708; --accent-soft:#F1E6C8; --on-accent:#FFFFFF; --scrim:rgba(20,26,45,.28);
+  --f-display:"LXGW WenKai TC","Kaiti TC","STKaiti","BiauKai",serif;
+  --f-body:"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --sea:#0E1322; --ripple:#1D2540; --land:#1A2033; --land-edge:#3E4868;
+  --paper:#131A2B; --fg:#E3E6EF; --muted:#A0A8C0; --line:#2A3350;
+  --accent:#E6BC57; --accent-soft:#3A3018; --on-accent:#1C1505; --scrim:rgba(0,0,0,.5); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --sea:#0E1322; --ripple:#1D2540; --land:#1A2033; --land-edge:#3E4868;
+  --paper:#131A2B; --fg:#E3E6EF; --muted:#A0A8C0; --line:#2A3350;
+  --accent:#E6BC57; --accent-soft:#3A3018; --on-accent:#1C1505; --scrim:rgba(0,0,0,.5); color-scheme:dark}
+
+*{box-sizing:border-box}
+html{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0;background:var(--sea);color:var(--fg);font-family:var(--f-body);font-size:16px;line-height:1.75}
+[hidden]{display:none!important}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--paper)}
+.wrap{max-width:1120px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+a{color:inherit}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,a:focus-visible,[tabindex]:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--paper);border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;flex-wrap:wrap;align-items:center;gap:10px 20px;padding-block:12px}
+.brand{display:flex;align-items:baseline;gap:12px;margin-right:auto;flex-wrap:wrap}
+.home{font-size:13px;color:var(--muted);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:2px 10px}
+.home:hover{color:var(--accent);border-color:var(--accent)}
+.brand h1{margin:0;font-family:var(--f-display);font-size:30px;font-weight:700;letter-spacing:.12em;line-height:1.1}
+.brand small{color:var(--muted);font-size:13px;letter-spacing:.08em}
+.tabs{display:flex;border:1px solid var(--line);border-radius:999px;padding:3px;gap:2px}
+.tabs button{border:0;background:none;padding:5px 14px;border-radius:999px;font-size:14px;color:var(--muted)}
+.tabs button[aria-pressed="true"]{background:var(--fg);color:var(--paper)}
+.act{display:flex;gap:8px}
+.btn{border:1px solid var(--line);background:var(--paper);padding:6px 14px;border-radius:999px;font-size:14px;text-decoration:none;display:inline-block}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent);font-weight:500}
+.btn .n{font-variant-numeric:tabular-nums}
+
+.intro{padding-block:22px 6px;display:grid;gap:14px}
+.intro p{margin:0;max-width:66ch}
+.intro p b{font-family:var(--f-display);font-size:18px;font-weight:700}
+.threads{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.threads .lbl{font-size:13px;color:var(--muted);letter-spacing:.1em;margin-right:4px}
+.chip{border:1px solid var(--land-edge);background:var(--land);border-radius:999px;padding:4px 12px;font-size:14px;display:inline-flex;gap:6px;align-items:baseline}
+.chip em{font-style:normal;font-size:12px;color:var(--muted)}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.chip[aria-pressed="true"] em{color:var(--on-accent);opacity:.85}
+.thread-note{min-height:1.75em;font-size:14px;color:var(--muted);margin:0}
+.thread-note strong{color:var(--accent);font-weight:500}
+
+.scroller{overflow-x:auto;-webkit-overflow-scrolling:touch;padding-block:4px 10px}
+#map{display:block;width:100%;min-width:740px;height:auto}
+.ripple{fill:none;stroke:var(--ripple);vector-effect:non-scaling-stroke}
+.land{fill:var(--land);stroke:var(--land-edge);stroke-width:1.2;vector-effect:non-scaling-stroke}
+.place{fill:var(--muted);font-family:var(--f-display);font-size:20px;letter-spacing:.2em}
+.current{fill:none;stroke:var(--muted);stroke-width:1.4;stroke-dasharray:2 8;stroke-linecap:round;opacity:.6;animation:flow 7s linear infinite}
+@keyframes flow{to{stroke-dashoffset:-100}}
+.tline{fill:none;stroke:var(--accent);stroke-width:3;stroke-linecap:round;opacity:.85}
+.mk{cursor:pointer;outline:none}
+.mk .hit{fill:transparent}
+.mk .dot{fill:var(--paper);stroke:var(--fg);stroke-width:1.5}
+.mk .no{fill:var(--fg);font-size:13px;font-weight:700;text-anchor:middle;dominant-baseline:central;font-variant-numeric:tabular-nums;pointer-events:none}
+.mk .tt{fill:var(--fg);font-family:var(--f-display);font-size:15px;text-anchor:middle;paint-order:stroke;stroke:var(--land);stroke-width:5px;stroke-linejoin:round;pointer-events:none}
+.mk.seen .dot{fill:var(--accent);stroke:var(--accent)}
+.mk.seen .no{fill:var(--on-accent)}
+.mk.cur .dot,.mk:hover .dot,.mk:focus-visible .dot{stroke:var(--accent);stroke-width:3}
+.mk.dim{opacity:.25}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13px;color:var(--muted);padding-block:2px 18px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:50%;border:1.5px solid var(--fg);background:var(--paper)}
+.legend i.s{background:var(--accent);border-color:var(--accent)}
+.hint-m{display:none}
+@media (max-width:760px){.hint-m{display:inline}}
+
+.isles{display:grid;gap:26px;padding-block:6px 30px}
+.isle h3{margin:0 0 4px;font-family:var(--f-display);font-size:24px}
+.isle .sum{margin:0 0 10px;font-size:14px;color:var(--muted)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.card{text-align:left;border:1px solid var(--line);background:var(--paper);border-radius:12px;padding:16px;display:grid;gap:6px;align-content:start;min-width:0}
+.card:hover{border-color:var(--accent)}
+.card .meta{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--muted);letter-spacing:.06em}
+.card .meta b{font-variant-numeric:tabular-nums;color:var(--fg)}
+.card.seen .meta b{color:var(--accent)}
+.card h4{margin:0;font-family:var(--f-display);font-size:20px;line-height:1.35}
+.card p{margin:0;font-size:14px;color:var(--muted)}
+.card.dim{opacity:.35}
+.seenmark{color:var(--accent)}
+
+.panel{position:fixed;top:0;right:0;bottom:0;width:min(460px,100%);z-index:21;background:var(--paper);border-left:1px solid var(--line);overflow-y:auto;
+  padding:calc(env(safe-area-inset-top,0px) + 18px) max(22px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 22px) 24px;
+  display:grid;gap:16px;align-content:start;animation:slidein .22s ease-out}
+@keyframes slidein{from{transform:translateX(24px);opacity:.4}}
+.scrim{position:fixed;inset:0;background:var(--scrim);z-index:20}
+@media (max-width:700px){
+  .panel{top:auto;left:0;width:100%;max-height:86%;border-left:0;border-top:1px solid var(--line);border-radius:18px 18px 0 0;
+    padding-left:max(18px,env(safe-area-inset-left,0px));padding-right:max(18px,env(safe-area-inset-right,0px));animation-name:slideup}
+  @keyframes slideup{from{transform:translateY(30px);opacity:.4}}
+}
+.p-top{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:13px;color:var(--muted);letter-spacing:.06em}
+.p-top .x{border:1px solid var(--line);background:none;border-radius:999px;width:34px;height:34px;font-size:18px;line-height:1}
+.panel h2{margin:0;font-family:var(--f-display);font-size:32px;line-height:1.2;letter-spacing:.04em;text-wrap:balance}
+.orig{margin:0;font-size:14px;color:var(--muted)}
+.orig span{display:block}
+.one{margin:0;font-family:var(--f-display);font-size:21px;line-height:1.6;border-left:3px solid var(--accent);padding-left:12px}
+.tags{display:flex;flex-wrap:wrap;gap:6px}
+.tag{font-size:12px;border:1px solid var(--land-edge);border-radius:999px;padding:1px 10px;color:var(--muted)}
+.box{display:grid;gap:4px}
+.box h4{margin:0;font-size:12px;letter-spacing:.18em;color:var(--accent);font-weight:700}
+.box p{margin:0}
+.quote{margin:0;padding:14px 16px;border-radius:10px;background:var(--accent-soft);font-family:var(--f-display);font-size:19px;line-height:1.8;display:grid;gap:6px}
+.quote .src{font-family:var(--f-body);font-size:12px;color:var(--muted)}
+.ask{border:1px dashed var(--land-edge);border-radius:10px;padding:12px 14px}
+.bridge{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:var(--land)}
+.bridge p{margin:0;font-size:14px;flex:1 1 200px;min-width:0}
+.bridge b{font-family:var(--f-display);font-size:16px}
+.rel{display:flex;flex-wrap:wrap;gap:6px}
+.rel button{border:1px solid var(--line);background:var(--land);border-radius:8px;padding:4px 10px;font-size:14px}
+.pnav{display:flex;justify-content:space-between;gap:10px;border-top:1px solid var(--line);padding-top:14px}
+.pnav .btn[disabled]{opacity:.35;cursor:default}
+
+.cells{display:grid;grid-template-columns:repeat(13,1fr);gap:4px}
+.cells span{aspect-ratio:1;max-width:100%;border:1px solid var(--land-edge);border-radius:4px;display:grid;place-items:center;font-size:10px;color:var(--muted);font-variant-numeric:tabular-nums}
+.cells span.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.task{display:grid;gap:8px}
+.task label{font-size:13px;color:var(--muted)}
+.task select,.task textarea{font:inherit;color:var(--fg);background:var(--land);border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%}
+.task textarea{min-height:110px;resize:vertical}
+.task .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.task .ok{font-size:13px;color:var(--accent)}
+.fine{font-size:12px;color:var(--muted);margin:0}
+
+footer{padding-block:10px 36px;font-size:12px;color:var(--muted)}
+footer p{margin:0;max-width:72ch}
+@media (prefers-reduced-motion:reduce){.current{animation:none}.panel{animation:none}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <div class="brand"><a class="home" href="index.html">← 心海群島</a><h1>解疑島</h1><small>一貫道疑問解答　課前導覽</small></div>
+    <div class="tabs" role="group" aria-label="切換檢視">
+      <button id="v-map" aria-pressed="true">全景</button>
+      <button id="v-list" aria-pressed="false">清單</button>
+    </div>
+    <div class="act">
+      <button class="btn primary" id="tourBtn">從第一題開始</button>
+      <button class="btn" id="logBtn">日誌 <span class="n" id="logN">0/26</span></button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <section class="intro">
+    <p><b>剛到佛堂，心裡一定有很多問號。</b>　《一貫道疑問解答》成書於民國二十六年，作者把初學者最常問的問題一題一題寫下來回答，全書一百多題。這裡挑出二十六題，分成五座島。每一題都有一句話的白話答案、書上的說法、原文摘句，和一個留給你的問題。</p>
+    <div class="threads" id="threads"><span class="lbl">串起來看</span></div>
+    <p class="thread-note" id="threadNote">選一條線索，看哪幾題在說同一件事。</p>
+  </section>
+
+  <section id="mapView">
+    <div class="scroller" id="scroller"><svg id="map" viewBox="0 0 1000 800" role="img" aria-label="解疑島地圖，五座島共二十六題"></svg></div>
+    <div class="legend"><span><i></i>還沒讀</span><span><i class="s"></i>已讀過</span><span>數字是建議的閱讀順序</span><span class="hint-m">左右滑動可看完整地圖</span></div>
+  </section>
+  <section id="listView" hidden><div class="isles" id="isles"></div></section>
+
+  <footer><p>題目與原文摘句出自《一貫道疑問解答》（南屏道濟著，民國二十六年出版）；「一句話」與「書上怎麼說」是為青年改寫的白話導讀，不是逐字翻譯。有疑問時，請以原書與講師的說明為準。</p></footer>
+</div>
+
+<div class="scrim" id="scrim" hidden></div>
+<aside class="panel" id="panel" hidden aria-live="polite"></aside>
+<aside class="panel" id="log" hidden>
+  <div class="p-top"><span>我的解疑日誌</span><button class="x" data-close aria-label="關閉">×</button></div>
+  <h2>讀過 <span id="logCount">0</span> / 26 題</h2>
+  <div class="cells" id="cells"></div>
+  <div class="task">
+    <div class="box"><h4>課前小任務</h4><p>選一題你讀完「還是有疑問」或「最有感」的題目，寫下你的想法或還想問的問題，班會時帶來。</p></div>
+    <label for="taskPick">選一題</label>
+    <select id="taskPick"></select>
+    <label for="taskText">我的想法或問題</label>
+    <textarea id="taskText" placeholder="例如：第 13 題。我還是不太懂敬神和迷信的差別，想在班會上問。"></textarea>
+    <div class="row"><button class="btn primary" id="copyBtn">複製我的回答</button><span class="ok" id="copyOk" aria-live="polite"></span></div>
+    <p class="fine">內容只存在這台裝置的瀏覽器裡，不會傳給任何人。可以複製後貼到班群。</p>
+  </div>
+</aside>
+
+<script>
+const ISLES = [
+  {k:'A',name:'道是什麼',sum:'先弄清楚名字：道、一貫、三教。',cx:270,cy:185,rx:215,ry:118,seed:7},
+  {k:'B',name:'為什麼求道',sum:'心好不就好了？為什麼要先求再說明？',cx:740,cy:178,rx:205,ry:112,seed:13},
+  {k:'C',name:'佛堂裡的事',sum:'拜誰、燒香磕頭、吃素，以及會不會是迷信。',cx:500,cy:400,rx:235,ry:96,seed:21},
+  {k:'D',name:'怎麼修',sum:'內功、外功、先做好人，還有熱度消退怎麼辦。',cx:262,cy:648,rx:232,ry:118,seed:5},
+  {k:'E',name:'認識自己的心',sum:'人心道心、性善性惡、因果，以及「我還來得及嗎」。',cx:742,cy:648,rx:232,ry:118,seed:17}
+];
+const THREADS = {
+  nature:{name:'本性',sub:'找回本來的光',note:'人人本來光明，被遮住了，修道就是擦亮它。'},
+  sincere:{name:'誠敬',sub:'心誠最重要',note:'禮節不是形式，重點是那份誠心。'},
+  deed:{name:'行善',sub:'先做好人',note:'修道從盡人道、幫助人開始。'},
+  steady:{name:'恆心',sub:'走一程近一程',note:'不求速成，最怕的是不持續。'},
+  one:{name:'一理',sub:'三教同源',note:'儒釋道說法不同，說的是同一個理。'}
+};
+const Q = [
+ {isl:'A',t:'什麼是道',orig:['甚麼是道'],tags:['nature'],
+  one:'道就是天地萬物都有的那個「理」，放在人身上，就是我們的本性。',
+  body:'書上說：天有天理、地有地理、人有性理、物有物理，天地人物都是同一個理生出來的。道也像一條人人必走的大路：順著理走，平坦光明；背著理走，處處坑洞。所以孔子教人「非禮勿視、勿聽、勿言、勿動」，從身邊的小事守理做起。',
+  quote:'道是天的天理。人的性靈。',
+  ask:'你覺得「合理」跟「合群」有什麼不一樣？最近有沒有一件事，你知道怎麼做才合理，卻很難做到？'},
+ {isl:'A',t:'一貫道',orig:['何為一貫道'],tags:['one'],
+  one:'「一」是萬物共同的根源之理，「貫」是這個理貫穿天地萬物、古往今來。',
+  body:'書上說：「一」是無極的真理，也就是「理」；「貫」是貫通一切。這個理從無到有、從始到終貫穿天地萬物，萬物也都具有這個理，所以叫「一貫」。「道」是路，也是理。合起來說，就是由一個理貫通古今中外、眾生都能走的光明大道。',
+  quote:'由一而貫通天地古今中外。眾生之光明大道。',
+  ask:'孔子說「吾道一以貫之」。如果要用一個字貫穿你自己的生活，你會選哪個字？'},
+ {isl:'A',t:'道的源流',orig:['一貫道何時發現'],tags:['one'],
+  one:'書中認為道在天地之前就存在，從伏羲、堯舜、孔孟，到釋迦、達摩，一脈相傳下來。',
+  body:'書上說：老子講大道生育天地，所以先有道才有天地。伏羲畫八卦是大道降世之始，之後黃帝、堯舜禹湯、文武周公心法相傳；老子傳孔子，孔子傳曾子，「一貫」這個名稱已經寫在經典裡。孟子以後道脈轉往西方，由釋迦傳迦葉，到第二十八代達摩東來，再一代代傳下，到第十五代王祖時改稱一貫道。',
+  quote:'未有天地。已有此道。',
+  ask:'「道統」強調一代傳一代。你身上有沒有什麼東西，是從長輩那裡傳下來、你也想傳下去的？'},
+ {isl:'A',t:'三教合一',orig:['三教合一怎樣解說'],tags:['one'],
+  one:'儒、釋、道說法不同，但都從同一個理生出來，都在教人回到本性。',
+  body:'書上說：三教是因應不同時代興起的，說法各有不同，目的都是勸人向善。道家講虛無、保養虛靈；佛家講寂靜、滅除雜念；儒家講明明德、去除私慾，最後都指向同一個根源。三教都以「一」為根本，就像一個人身上有精、氣、神三樣，其實是同一個人。',
+  quote:'佛講萬法歸一。道講抱元守一。儒講執中貫一。',
+  ask:'你聽過哪一教的話最有感覺？它跟另外兩教有沒有相通的地方？'},
+ {isl:'B',t:'心好就好？',orig:['心好而已何必入道呢'],tags:['deed'],
+  one:'心好能得福報，但福報總有用完的一天；書中說，求道是為了根本解決生死。',
+  body:'書上說：真正的善人聽到道，多半會歡喜修行，因為他本來就關心世道人心。書中認為人生最大的目的，是超脫生死、回到本來。只有心好，大概就是做一個善人、來世享福報；但福祿有盡頭，用完了又不知道會怎樣。',
+  quote:'福祿有盡期。',
+  ask:'「當個好人」和「修道」，在你看來差在哪裡？你有沒有過「光做好事，好像還少了什麼」的感覺？'},
+ {isl:'B',t:'先說明再求？',orig:['先說明了再求道不好嗎'],tags:['sincere'],
+  one:'書中說，道的心法自古不輕易外傳，要誠心求了以後才傳授。',
+  body:'書上說：現在社會邪正混雜，要看一個人的佛緣和智慧，能不能分辨真假，才能傳授。古聖先賢對神佛相傳的心法，都不敢輕易說出口。所以時機不到不降，不是對的人不傳；即使現在普渡大開，也要誠心求道以後才能傳授。',
+  quote:'道非其時不降。非其人不傳。',
+  ask:'有些事要先懂才去做，有些事要做了才會懂，像游泳、騎腳踏車。你覺得修道比較像哪一種？'},
+ {isl:'B',t:'緣分',orig:['何為緣分'],tags:['steady'],xy:1,xyNote:'惠能聽到一句經文，心就亮了起來，也是「一聽就信」的緣。',
+  one:'「緣」是聽了就相信、願意修；「分」是修了以後真的去做，按功果而定。',
+  body:'書上說：有善根的人，一聽就生起信心，聽了就信，信了就修，這是有緣。「分」就像爵位：得道後時時放在心上，怕落在人後，早晚用功、積功累德，最後依照功果定位，這叫有緣有分。書中特別提醒：知道了卻不學，是無緣；學了卻不實在做，是無分。',
+  quote:'知而不學為無緣。學而不實為無分。',
+  ask:'今天你會來班會，算不算一種緣？那「分」可以從哪裡開始？'},
+ {isl:'B',t:'人多不信？',orig:['道是真道然而人多不信是為什麼'],tags:['steady'],
+  one:'書中用金礦作比喻：有人以為石頭裡不會有金子，等到知道了，已經來不及。',
+  body:'書上說：信不信，一方面看祖上的德，一方面看自己的根基。有緣的人聽了捨不得放下，沒緣的人勉強也沒用。就像一座含金的礦山開放申請，愚人以為石頭裡哪有黃金，智者先去開採而致富；等大家知道真的有金子，礦早已被領完了。',
+  quote:'有緣遇着佛出世。無緣遇着佛涅槃。',
+  ask:'你有沒有因為「一開始不相信」而錯過什麼的經驗？'},
+ {isl:'C',t:'拜哪一位',orig:['道中供奉那位神佛','無極老中和明明上帝是一個神嗎'],tags:['sincere','nature'],
+  one:'佛堂主要供奉明明上帝，也就是無極老中；「明明」取自《大學》的「明明德」。',
+  body:'書上說：一貫道供奉主宰三界十方的明明上帝，因為祂位居無極，是生育天地人類的根源，所以又稱無極老中。此外也供奉協助天道的諸天神聖，像彌勒古佛、觀音古佛、濟公活佛。為什麼叫「明明」？人剛出生時本性很光明，後來被物慾遮住了，修道就是讓它再亮起來，也就是《大學》說的「明明德」。',
+  quote:'明明。即是復明吾人本來的性靈。',
+  ask:'「明明德」的第一個「明」是動詞。你覺得自己身上有哪些「本來很亮、後來被遮住」的部分？'},
+ {isl:'C',t:'燒香磕頭',orig:['道中也燒香磕頭嗎','燒香磕頭究竟有甚麼意思'],tags:['sincere'],
+  one:'燒香是向神明表達心意的信號，磕頭是最恭敬的禮；重點是誠心。',
+  body:'書上說：中國禮制從周公制禮開始，古聖先賢都以磕頭為最敬的禮，燒香則是祈禱神靈的信符，和現在的獻花、鞠躬、默哀一樣，都是表達誠敬。書中還用「命」字拆字作比喻：看起來像「人」和「叩」。人只有在危急保命時才肯五體投地，修道為的是性命，所以重視叩首。',
+  quote:'命字分寫為人叩。',
+  ask:'你上一次真心對一個人鞠躬或說謝謝，是什麼時候？「誠心」和「做了動作」差在哪裡？'},
+ {isl:'C',t:'是迷信嗎',orig:['求道可矣敬神得勿迷信乎'],tags:['sincere'],
+  one:'書中說「敬」就是「誠」；敬神是報答根源、表達誠心，不是盲目相信。',
+  body:'書上說：對自己有益的人，我們都會敬重。萬物從一個理開始，人卻迷失本性、忘了來路，所以上天降道救人。求的是關係身心性命的大道，怎麼能傲慢不敬？敬神正是報答這份恩；就算有人說是迷信，其實也只是報本、表示誠心而已。',
+  quote:'敬者誠也。',
+  ask:'你覺得「迷信」和「信仰」的分界在哪裡？可以舉一個生活中的例子嗎？'},
+ {isl:'C',t:'敬神求福',orig:['不知敬神也可求福嗎'],tags:['sincere','nature'],xy:4,xyNote:'書上這句話，正是行由島第 4 站五祖出題時說的。',
+  one:'只求福、不改過，沒有用；書中引五祖的話：本性若迷，福報也救不了。',
+  body:'書上說：敬神求福，一定要先防非改過，否則得罪於天，求也沒有用。修道人以道為重，古代君王福報再大，現在又在哪裡？所以五祖說，世人只知道求福，卻不想想自性要是迷了，福又怎麼求得到。',
+  quote:'世人只知求福。不思自性若迷。福何可求呢。',
+  ask:'考試前去拜拜，和考前認真準備，你覺得哪個比較重要？兩個能不能一起？'},
+ {isl:'C',t:'要吃素嗎',orig:['進了道也吃素嗎'],tags:['deed'],
+  one:'書中建議吃素，為了保持清淨、慈悲不殺生；做不到一次全素，可以從花齋、月齋慢慢開始。',
+  body:'書上說：本性原本至清，混入濁氣就容易失去本真，所以修道要「留清去濁」，五葷和葷腥都盡量戒除。另一方面，上天有好生之德，修道人不應為了口腹任意殺生。不過書中也說，一下子做不到的，可以先持花齋、月齋，慢慢養成習慣，再持常齋。',
+  quote:'修道人。要以慈悲為主。',
+  ask:'如果一週吃一天素，對你來說最難的會是什麼？「慈悲」可以從哪一餐開始？'},
+ {isl:'D',t:'入道做什麼',orig:['入了道作些什麼事'],tags:['deed'],
+  one:'一面修道、一面謀生，不用放下學業和工作；功夫分成內功和外功。',
+  body:'書上說：一貫道的修行是「半聖半凡」，士農工商都不妨礙本業。修道功夫分兩種：內功是修身成己，讓私慾淨盡、天理流行；外功是勸善成人，與人為善、量力救世。總歸一句：內外兼修、聖凡雙顧。',
+  quote:'一面修道。一面謀生。',
+  ask:'你現在的本業是讀書或工作。在這裡面，「修道」可以長什麼樣子？'},
+ {isl:'D',t:'內功',orig:['何為內功','求其放心的工夫究竟如何作法'],tags:['nature'],xy:9,xyNote:'惠能在大庾嶺問惠明的，也是「不思善，不思惡」。',
+  one:'內功就是收心：讓行為合理、清心寡欲，把跑掉的心找回來。',
+  body:'書上說：內功是修身成己，讓一切行為都合乎理。孟子說學問之道就是「求其放心」，把放出去的心找回來。書中建議早晚靜坐：端坐、閉目、平心靜氣，放下雜思妄想，不想善也不想惡，坐到一念不生的時候，心就像澄清的水。久了自然能回到本來。',
+  quote:'也不思善。也不想惡。',
+  ask:'試著安靜坐一分鐘，什麼都不做。你的心跑去別的地方幾次？'},
+ {isl:'D',t:'外功',orig:['何為外功','行外功時不知如何做法為宜'],tags:['deed'],
+  one:'外功是幫助別人變好，但不可為了名聲，也不能用兇巴巴的態度勸人。',
+  body:'書上說：外功是勸善成人、濟人利物，先正己再正人。書中特別提醒兩件事：不能有沽名釣譽的心，為了名聲而行功就不算功；也不能脾氣急躁、惡言相向，那就不像修道人。要隨時隨地和顏悅色，對父親談慈愛，對子女談孝順，對兄長談友愛，對朋友談信實。',
+  quote:'與父言慈。與子言孝。',
+  ask:'有人用「說教」的方式勸你，你會想聽嗎？如果換你想幫朋友，你會怎麼開口？'},
+ {isl:'D',t:'先盡人道',orig:['天道人道怎分修時應以何者為先'],tags:['deed'],
+  one:'修天道要先在人道上站穩：孝順父母、友愛兄弟，人做好了才談修道。',
+  body:'書上說：重性命而修的是天道，重倫常而行的是人道。人道是天道的枝幹，所以修天道一定要先從人道立足：孝悌忠信、禮義廉恥。如果連父母都不孝敬、兄弟都不親愛、說話心口不一，修行也沒有益處。',
+  quote:'修天道的。應以盡人道為先。',
+  ask:'「先盡人道」放到你身上，這一週可以先做到哪一件事？'},
+ {isl:'D',t:'慢慢來',orig:['修道之事雖然很好但是不能一時成功又當怎樣呢'],tags:['steady'],
+  one:'修道不求速成；像鐵杵磨成針，走一程就近一程，最怕的是心不專一。',
+  body:'書上說：聖人說「欲速則不達」。古人用鐵杵磨針比喻修道：山再高，也怕慢慢走的人；路再遠，日子總能熬過。玉石、珍珠、松柏都是越久越珍貴；得來容易的，失去也容易。所以要把急躁改成耐煩，時時記得道念。',
+  quote:'西天雖遠。走一程近一程。',
+  ask:'你有沒有一件事，是靠「慢慢來、不放棄」才做到的？'},
+ {isl:'D',t:'熱度消退',orig:['每見同人初入道時十分精進既久則懈怠不知何故'],tags:['steady'],
+  one:'得道容易修道難；要有前輩帶、彼此提醒，才能始終如一。',
+  body:'書上說：常言道，得道容易修道難，修道容易了道難，難就難在始終如一。鐘不敲不響，人不喚不醒；帶領的人要以身作則，引保師要常講常說，提醒大家立身、除嗜好、盡人道、堅定意志、除雜念這些功課。成全別人，其實也是成全自己。',
+  quote:'得道容易修道難。',
+  ask:'新年新希望通常撐多久？什麼樣的朋友或方法，能讓你不那麼容易放棄？'},
+ {isl:'E',t:'人心道心',orig:['何為人心何為道心'],tags:['nature'],xy:7,xyNote:'惠能悟到的「何期自性，本自清淨」，說的就是道心。',
+  one:'從習氣、情緒發出來的是人心，從本性發出來的是道心；每個人兩個都有。',
+  body:'書上說：發於氣質之性的叫人心，發於理性的叫道心，每個人都兩個都有。人心危險不安，道心微小難見。管不住人心，道心就一天天不見；管得住人心，道心就一天天顯現。小孩子本性圓明，知識一開，多一分習染就遮住一分良知，修道就是讓這面古鏡重新明亮。',
+  quote:'能以治住人心。則道心日現。',
+  ask:'最近一次你心裡「兩個聲音在吵架」是什麼時候？最後哪一個贏了？'},
+ {isl:'E',t:'明鏡蒙塵',orig:['同是人類為何有聖賢愚凡之分呢'],tags:['nature','one'],xy:5,xyNote:'神秀的「時時勤拂拭」，也是用明鏡和灰塵作比喻。',
+  one:'本性像一面明鏡，人人一樣亮；聖賢和凡人的差別，在灰塵有沒有擦。',
+  body:'書上說：差別在每個人的氣稟和外物牽引不同，本性發展得不一樣。能克制氣慾、立志效法聖賢的，就是聖賢；貪戀鏡花水月的，就是凡人。好比一面明鏡，本來純明，時間久了落上灰塵，不擦就不會再亮。所以儒家說存心養性，道家說修心煉性，佛家說明心見性，說法不同，都是要恢復本性。',
+  quote:'譬如明鏡。本體原是純明。',
+  ask:'這一題比較像神秀的偈，還是惠能的偈？為什麼？'},
+ {isl:'E',t:'性善性惡',orig:['人性為何有善惡之分呢'],tags:['nature','one'],
+  one:'書中用理性、氣性、質性三層，調和孟子、告子、荀子對人性的爭論。',
+  body:'書上說：理性本來靈明，純善無惡；氣性清濁不一，可善可惡；質性純是物慾。孟子說性善，說的是理性；告子說性有善有不善，說的是氣性；荀子說性惡，說的是質性。三個人說法不同，是因為看的層次不同。',
+  quote:'理性本來靈明。純善無惡。',
+  ask:'你比較同意孟子還是荀子？讀完這一題，你的答案有沒有變？'},
+ {isl:'E',t:'因果',orig:['因果二字怎樣講說'],tags:['deed'],
+  one:'有因就有果：種瓜得瓜、種豆得豆，善因善果、惡因惡果。',
+  body:'書上說：人之所以做不到「諸惡莫作、眾善奉行」，是因為不明白因果。天理像一面鏡子，一絲不差。書中引邵康節的話：虧待別人是禍，被人虧待反而是福；又引佛經的意思：想知道前世種了什麼因，看今生所受的；想知道來世會有什麼果，看今生所做的。',
+  quote:'欺人是禍。饒人是福。',
+  ask:'「饒人是福」聽起來有點吃虧。你同意嗎？有沒有親身的例子？'},
+ {isl:'E',t:'還來得及嗎',orig:['年少造孽老時修行不知可成道否','一生修行……老來忽然顛倒破齋犯戒不知也能成道否'],tags:['steady'],
+  one:'只要真心回頭、改惡向善，不論年紀都能成道；但修了一輩子又半途放棄，前功也會白費。',
+  body:'書上說：苦海無邊，回頭是岸。只要回心發願修行，捨非從是、改惡向善、謹守齋戒、拜求明師，不論老少都能成道，就是「放下屠刀，立地成佛」。書中也談到另一面：一輩子修行的人，如果晚年把善根丟了、遺棄前功，終究也會沉淪。重點是從現在開始，而且一直走下去。',
+  quote:'不拘老少。皆可成道。',
+  ask:'你有沒有一個「想重新開始」的地方？是什麼讓你覺得「已經來不及了」？'},
+ {isl:'E',t:'才短識淺',orig:['才短識淺不知修道亦可增否'],tags:['steady'],xy:6,xyNote:'不識字的惠能說：「下下人有上上智。」',
+  one:'可以。書中說，從安靜中求來的才智，和從書本得來的不一樣。',
+  body:'書上說：好好用功，向靜中去求就可以。書中引諸葛亮「淡泊以明志，寧靜以致遠」，又說學問要安靜，才幹要學習；傲慢的人不能精進，浮躁的人不能明理。從靜中求得的才，才德兼備。',
+  quote:'淡泊以明志。寧靜以致遠。',
+  ask:'你覺得自己「不夠聰明」的時候，通常是在跟誰比？'}
+];
+Q.forEach((q,i)=>q.no=i+1);
+const byNo=n=>Q.find(q=>q.no===n);
+const isleOf=k=>ISLES.find(i=>i.k===k);
+
+const store={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+let seen=new Set(store.get('jy-seen',[])), thread=null, current=null;
+
+/* ---------- map ---------- */
+const NS='http://www.w3.org/2000/svg';
+const el=(tag,a={},p)=>{const e=document.createElementNS(NS,tag);for(const k in a)e.setAttribute(k,a[k]);if(p)p.appendChild(e);return e};
+function rng(seed){return()=>{seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const f=n=>n.toFixed(1);
+function closedPath(p){const n=p.length;let d=`M${f(p[0][0])},${f(p[0][1])}`;for(let i=0;i<n;i++){const a=p[(i-1+n)%n],b=p[i],c=p[(i+1)%n],e=p[(i+2)%n];d+=`C${f(b[0]+(c[0]-a[0])/6)},${f(b[1]+(c[1]-a[1])/6)} ${f(c[0]-(e[0]-b[0])/6)},${f(c[1]-(e[1]-b[1])/6)} ${f(c[0])},${f(c[1])}`}return d+'Z'}
+function openPath(p){if(p.length<2)return'';const q=[p[0],...p,p[p.length-1]];let d=`M${f(p[0][0])},${f(p[0][1])}`;for(let i=1;i<q.length-2;i++){const a=q[i-1],b=q[i],c=q[i+1],e=q[i+2];d+=`C${f(b[0]+(c[0]-a[0])/6)},${f(b[1]+(c[1]-a[1])/6)} ${f(c[0]-(e[0]-b[0])/6)},${f(c[1]-(e[1]-b[1])/6)} ${f(c[0])},${f(c[1])}`}return d}
+function blob(I){const r=rng(I.seed),n=18,p=[];for(let i=0;i<n;i++){const a=i/n*Math.PI*2,k=.87+r()*.2;p.push([I.cx+Math.cos(a)*I.rx*k,I.cy+Math.sin(a)*I.ry*k])}return closedPath(p)}
+
+/* place each island's questions in two staggered rows */
+ISLES.forEach(I=>{const qs=Q.filter(q=>q.isl===I.k);const top=Math.ceil(qs.length/2);
+  qs.forEach((q,i)=>{const row=i<top?0:1,idx=row?i-top:i,cnt=row?qs.length-top:top;
+    const step=top>1?I.rx*1.25/(top-1):0;
+    q.x=Math.round(I.cx+(idx-(cnt-1)/2)*step); q.y=Math.round(I.cy+(row?I.ry*.28:-I.ry*.38))})});
+
+const map=document.getElementById('map');
+const gRip=el('g',{},map),gLand=el('g',{},map),gCur=el('g',{},map),gText=el('g',{},map),gThread=el('g',{},map),gMk=el('g',{},map);
+ISLES.forEach(I=>{const d=blob(I);
+  [1.3,1.17,1.07].forEach((s,i)=>el('path',{d,class:'ripple','stroke-width':1,opacity:.35+i*.22,transform:`translate(${I.cx} ${I.cy}) scale(${s}) translate(${-I.cx} ${-I.cy})`},gRip));
+  el('path',{d,class:'land'},gLand);
+  el('text',{x:I.cx,y:I.cy-I.ry-20,class:'place','text-anchor':'middle'},gText).textContent=I.name});
+el('path',{d:openPath(ISLES.map(I=>[I.cx,I.cy])),class:'current'},gCur);
+
+const mkEls={};
+Q.forEach(q=>{const g=el('g',{class:'mk',tabindex:0,role:'button','aria-label':`第${q.no}題 ${q.t}`},gMk);
+  el('circle',{cx:q.x,cy:q.y,r:24,class:'hit'},g);
+  el('circle',{cx:q.x,cy:q.y,r:14,class:'dot'},g);
+  el('text',{x:q.x,y:q.y,class:'no'},g).textContent=q.no;
+  el('text',{x:q.x,y:q.y+33,class:'tt'},g).textContent=q.t;
+  g.addEventListener('click',()=>openQ(q.no));
+  g.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openQ(q.no)}});
+  mkEls[q.no]=g});
+
+/* ---------- list ---------- */
+function cardHTML(q){return `<button class="card" data-no="${q.no}"><span class="meta"><b>第 ${q.no} 題</b><span>${q.tags.map(k=>THREADS[k].name).join('・')}</span></span><h4>${q.t}${seen.has(q.no)?' <span class="seenmark" aria-label="已讀">●</span>':''}</h4><p>${q.one}</p></button>`}
+function renderList(){
+  document.getElementById('isles').innerHTML=ISLES.map(I=>`<div class="isle"><h3>${I.name}</h3><p class="sum">${I.sum}</p><div class="grid">${Q.filter(q=>q.isl===I.k).map(cardHTML).join('')}</div></div>`).join('');
+  document.querySelectorAll('.card').forEach(c=>{const q=byNo(+c.dataset.no);c.classList.toggle('seen',seen.has(q.no));c.classList.toggle('dim',!!thread&&!q.tags.includes(thread));c.onclick=()=>openQ(q.no)});
+}
+
+/* ---------- threads ---------- */
+const thWrap=document.getElementById('threads');
+Object.entries(THREADS).forEach(([k,v])=>{const b=document.createElement('button');b.className='chip';b.setAttribute('aria-pressed','false');b.dataset.k=k;b.innerHTML=`${v.name}<em>${v.sub}</em>`;b.onclick=()=>setThread(thread===k?null:k);thWrap.appendChild(b)});
+function setThread(k){thread=k;thWrap.querySelectorAll('.chip').forEach(c=>c.setAttribute('aria-pressed',String(c.dataset.k===k)));gThread.innerHTML='';
+  const note=document.getElementById('threadNote');
+  if(!k){note.textContent='選一條線索，看哪幾題在說同一件事。';Q.forEach(q=>mkEls[q.no].classList.remove('dim'));renderList();return}
+  const on=Q.filter(q=>q.tags.includes(k));
+  el('path',{d:openPath(on.map(q=>[q.x,q.y])),class:'tline'},gThread);
+  Q.forEach(q=>mkEls[q.no].classList.toggle('dim',!q.tags.includes(k)));
+  note.innerHTML=`<strong>${THREADS[k].name}</strong>　${THREADS[k].note}　共 ${on.length} 題：${on.map(q=>`${q.no}〈${q.t}〉`).join('、')}`;
+  renderList();
+}
+
+/* ---------- panel ---------- */
+const panel=document.getElementById('panel'),scrim=document.getElementById('scrim'),logP=document.getElementById('log');
+function openQ(n){const q=byNo(n);current=n;logP.hidden=true;seen.add(n);store.set('jy-seen',[...seen]);
+  const rel=Q.filter(o=>o.no!==n&&o.tags.some(t=>q.tags.includes(t))).slice(0,6);
+  panel.innerHTML=`
+    <div class="p-top"><span>第 ${q.no} 題 · ${isleOf(q.isl).name}</span><button class="x" data-close aria-label="關閉">×</button></div>
+    <h2>${q.t}</h2>
+    <p class="orig">原題：${q.orig.map(o=>`<span>「${o}」</span>`).join('')}</p>
+    <p class="one">${q.one}</p>
+    <div class="tags">${q.tags.map(k=>`<span class="tag">${THREADS[k].name}</span>`).join('')}</div>
+    <div class="box"><h4>書上怎麼說</h4><p>${q.body}</p></div>
+    <blockquote class="quote"><span>${q.quote}</span><span class="src">《一貫道疑問解答》原文</span></blockquote>
+    <div class="box ask"><h4>想一想</h4><p>${q.ask}</p></div>
+    ${q.xy?`<div class="bridge"><p><b>行由島也談到這件事</b><br>${q.xyNote}</p><a class="btn" href="xingyou.html#s${q.xy}">去第 ${q.xy} 站 →</a></div>`:''}
+    ${rel.length?`<div class="box"><h4>相關的題目</h4><div class="rel">${rel.map(o=>`<button data-go="${o.no}">${o.no}・${o.t}</button>`).join('')}</div></div>`:''}
+    <nav class="pnav"><button class="btn" data-go="${n-1}" ${n===1?'disabled':''}>← 上一題</button><button class="btn primary" data-go="${n===Q.length?'log':n+1}">${n===Q.length?'寫課前小任務 →':'下一題 →'}</button></nav>`;
+  panel.hidden=false;scrim.hidden=false;panel.scrollTop=0;
+  panel.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{const g=b.dataset.go;if(g==='log')openLog();else if(!b.disabled)openQ(+g)});
+  panel.querySelector('[data-close]').onclick=closeAll;
+  Object.values(mkEls).forEach(m=>m.classList.remove('cur'));mkEls[n].classList.add('cur');
+  try{history.replaceState(null,'','#q'+n)}catch(e){}
+  refresh();
+}
+function closeAll(){panel.hidden=true;logP.hidden=true;scrim.hidden=true;Object.values(mkEls).forEach(m=>m.classList.remove('cur'));try{history.replaceState(null,'',location.pathname)}catch(e){}}
+scrim.onclick=closeAll;
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeAll();if(!panel.hidden&&current){if(e.key==='ArrowRight'&&current<Q.length)openQ(current+1);if(e.key==='ArrowLeft'&&current>1)openQ(current-1)}});
+
+/* ---------- log ---------- */
+const pick=document.getElementById('taskPick'),txt=document.getElementById('taskText');
+pick.innerHTML=Q.map(q=>`<option value="${q.no}">第 ${q.no} 題・${q.t}</option>`).join('');
+pick.value=String(store.get('jy-pick','11'));txt.value=store.get('jy-text','');
+pick.onchange=()=>store.set('jy-pick',pick.value);txt.oninput=()=>store.set('jy-text',txt.value);
+function openLog(){panel.hidden=true;logP.hidden=false;scrim.hidden=false;refresh();logP.scrollTop=0}
+logP.querySelector('[data-close]').onclick=closeAll;
+document.getElementById('logBtn').onclick=openLog;
+document.getElementById('copyBtn').onclick=()=>{const q=byNo(+pick.value);const out=`【解疑島課前小任務】第${q.no}題〈${q.t}〉：${txt.value.trim()||'（還沒寫）'}`;const ok=document.getElementById('copyOk');
+  const fail=()=>{txt.focus();txt.select();ok.textContent='無法自動複製，請手動選取文字複製'};
+  try{navigator.clipboard.writeText(out).then(()=>{ok.textContent='已複製，可以貼到班群了'},fail)}catch(e){fail()}};
+
+function refresh(){const n=seen.size;document.getElementById('logN').textContent=`${n}/${Q.length}`;document.getElementById('logCount').textContent=n;
+  document.getElementById('cells').innerHTML=Q.map(q=>`<span class="${seen.has(q.no)?'on':''}" title="${q.t}">${q.no}</span>`).join('');
+  Q.forEach(q=>mkEls[q.no].classList.toggle('seen',seen.has(q.no)));renderList()}
+
+/* ---------- views ---------- */
+const views={map:'mapView',list:'listView'};
+function setView(v){Object.entries(views).forEach(([k,id])=>{document.getElementById(id).hidden=k!==v;document.getElementById('v-'+k).setAttribute('aria-pressed',String(k===v))});store.set('jy-view',v)}
+Object.keys(views).forEach(k=>document.getElementById('v-'+k).onclick=()=>setView(k));
+document.getElementById('tourBtn').onclick=()=>openQ(1);
+setView(store.get('jy-view','map')==='list'?'list':'map');
+refresh();
+const sc=document.getElementById('scroller');requestAnimationFrame(()=>{sc.scrollLeft=(sc.scrollWidth-sc.clientWidth)/2});
+const h=(location.hash||'').match(/^#q(\d{1,2})$/);if(h&&byNo(+h[1]))openQ(+h[1]);
+</script>
+</body>
+</html>
