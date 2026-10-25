@@ -101,8 +101,8 @@ footer p{margin:0;max-width:72ch}
       <div class="body">
         <p class="src">一貫道疑問解答</p>
         <h2>解疑島</h2>
-        <p class="desc">什麼是道？為什麼要求道？燒香磕頭、吃素是為了什麼？書中一百多題，挑出二十六題分成五座小島。</p>
-        <ul><li>26 題</li><li>一句話答案</li><li>原文摘句</li><li>連到行由島</li></ul>
+        <p class="desc">什麼是道？為什麼要求道？燒香磕頭、吃素是為了什麼？全書一百二十一題都能查原文，另挑出二十五題做成五座小島的精選導讀。</p>
+        <ul><li>25 題精選</li><li>全書 121 題原文</li><li>關鍵字搜尋</li><li>連到行由島</li></ul>
         <div class="foot"><span class="prog"><span class="bar"><i id="barJ"></i></span><span id="progJ">尚未出發</span></span><span class="go">進入解疑島 →</span></div>
       </div>
     </a>
@@ -139,7 +139,7 @@ draw('seaJ','j',[[170,105,120,62,7],[470,100,120,58,13],[320,190,130,46,21],[165
 function prog(key,total,bar,label){let n=0;try{n=(JSON.parse(localStorage.getItem(key)||'[]')||[]).length}catch(e){}
   document.getElementById(bar).style.width=Math.round(n/total*100)+'%';
   document.getElementById(label).textContent=n?`已讀 ${n}/${total}`:'尚未出發'}
-prog('xy-seen',12,'barX','progX');prog('jy-seen',26,'barJ','progJ');
+prog('xy-seen',12,'barX','progX');prog('jy-seen',25,'barJ','progJ');
 </script>
 </body>
 </html>
