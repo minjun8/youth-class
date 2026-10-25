@@ -154,7 +154,7 @@ button:focus-visible,a:focus-visible,[tabindex]:focus-visible,textarea:focus-vis
 .chip b{font-weight:400;font-size:12px;opacity:.75;font-variant-numeric:tabular-nums}
 .vol{display:grid;gap:8px;margin-bottom:22px}
 .vol h3{margin:0 0 4px;font-family:var(--f-display);font-size:24px}
-.bq{border:1px solid var(--line);background:var(--paper);border-radius:12px;min-width:0}
+.bq{border:1px solid var(--line);background:var(--paper);border-radius:12px;min-width:0;scroll-margin-top:calc(env(safe-area-inset-top,0px) + 120px)}
 .bq[open]{border-color:var(--accent)}
 .bq summary{list-style:none;cursor:pointer;padding:12px 16px;display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 12px;align-items:baseline}
 .bq summary::-webkit-details-marker{display:none}
