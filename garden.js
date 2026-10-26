@@ -185,7 +185,7 @@ function bridge(I){
 
 function buildIsland(I, idx){
   const grp = new THREE.Group(); scene.add(grp);
-  const m = islandMesh(I, C(T.land).offsetHSL(0, .12, -.08), T.sand, 100 + idx*13); scene.add(m); m.userData.walk = { type: 'island', I }; W.walk.push(m);
+  const m = islandMesh(I, C(T.land).offsetHSL(0, .1, -.24), T.sand, 100 + idx*13); scene.add(m); m.userData.walk = { type: 'island', I }; W.walk.push(m);
   const path = new THREE.Mesh(new THREE.RingGeometry(I.r*.5, I.r*.62, 40), lam('#f4ead6')); path.rotation.x = -Math.PI/2; path.position.set(I.cx, I.H+.01, I.cz); scene.add(path);
   const p = prop(I.prop, I.color); p.position.set(I.cx, I.H, I.cz); p.rotation.y = -I.th + Math.PI/2; scene.add(p); I.prop3 = p;
   p.traverse(o => { if(o.isMesh){ o.userData.island = I; W.clickable.push(o); } });
