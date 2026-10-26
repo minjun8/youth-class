@@ -227,3 +227,4 @@ a{color:inherit}
 .endc small{font-size:13px;color:var(--muted);line-height:1.6}
 .endc .go{font-size:13px;color:var(--accent);font-weight:600}
 .joint{height:22px;width:3px;margin-left:24px;background:repeating-linear-gradient(var(--c) 0 4px,transparent 4px 7px)}
+@media (min-width:761px) and (max-width:1120px){.tools .tbtn .lbl{display:none}.tools .tbtn{padding:8px 11px}}
