@@ -31,6 +31,8 @@ const ICON = {
   home:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>',
   list:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>',
   pass:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><circle cx="12" cy="10" r="3"/><path d="M8 17h8"/></svg>',
+  chat:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.4A8 8 0 1 1 21 12z"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .8-1 1.4M12 16h.01"/></svg>',
+  people:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c.5-3.5 3-5.5 6-5.5s5.5 2 6 5.5"/><circle cx="17" cy="9" r="2.4"/><path d="M16.5 14.6c2.4.2 4 1.9 4.5 4.9"/></svg>',
   book:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5V21h16"/></svg>'
 };
 document.body.insertAdjacentHTML('beforeend', `
@@ -47,12 +49,14 @@ document.body.insertAdjacentHTML('beforeend', `
     ${BOOK ? `<button class="tbtn" id="bBook" title="全書" aria-label="全書">${ICON.book}<span class="lbl">全書</span></button>` : ''}
     ${SUTRA ? `<button class="tbtn" id="bSutra" title="經文全文" aria-label="經文全文">${ICON.book}<span class="lbl">經文全文</span></button>` : ''}
     ${LINKS.length ? `<button class="tbtn" id="bLink" title="相通線" aria-label="相通線">${ICON.link}<span class="lbl">相通線</span><span class="n">${LINKS.length}</span></button>` : ''}
+    <button class="tbtn" id="bQA" title="提問與回答" aria-label="提問與回答">${ICON.chat}<span class="lbl">問答</span><span class="n" id="qaN" hidden>0</span></button>
+    <button class="tbtn" id="bWho" title="同修在線" aria-label="同修在線">${ICON.people}<span class="lbl">在線</span><span class="n" id="whoN">1</span></button>
     <button class="tbtn" id="bPass" title="學習護照" aria-label="學習護照">${ICON.pass}<span class="lbl">學習護照</span><span class="n" id="passN">0/${N}</span></button>
   </nav>
   <div class="timebar" role="group" aria-label="時段">
     <button data-t="dawn">晨光</button><button data-t="noon">午後</button><button data-t="dusk">黃昏</button><button data-t="night">星夜</button>
   </div>
-  <div class="hint">點地面走路・拖曳旋轉・滾輪縮放・點島名或圖釘</div>
+  <div class="hint">點地面或按 WASD 走路・走進設施就開始學習・拖曳旋轉・滾輪縮放</div>
   <div class="scrim" id="scrim" hidden></div>
   <aside class="panel" id="panel" hidden aria-live="polite"></aside>
   <div class="modal" id="modal" role="dialog" aria-modal="true" hidden></div>
@@ -63,7 +67,7 @@ const panel = $('#panel'), modal = $('#modal'), scrim = $('#scrim'), labels = $(
 /* ---------- 3D ---------- */
 let ok3d = !!window.THREE;
 let renderer, scene, camera, controls, hemi, sun, seaMat, stars, fogCol;
-const W = { islands: [], lanterns: [], pins: [], walk: [], ripples: [], clickable: [], bob: [] };
+const W = { islands: [], lanterns: [], pins: [], walk: [], ripples: [], clickable: [], bob: [], gems: [] };
 let R0 = 9, D = 30;
 
 function rnd(seed){ return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
@@ -73,27 +77,28 @@ const lam = (c, o={}) => new THREE.MeshLambertMaterial(Object.assign({ color: C(
 function layout(){
   ISL.forEach(I => { I.r = Math.max(6, Math.min(9.2, 5.2 + 0.33 * I.stations.length)); });
   const rmax = Math.max(...ISL.map(I => I.r));
-  D = R0 + rmax + 6;
+  D = R0 + rmax + 3.2;
   for(let k=0;k<40;k++){
     let okk = true;
-    for(let i=0;i<N;i++){ const a = ISL[i], b = ISL[(i+1)%N]; if(2*D*Math.sin(Math.PI/N) < a.r + b.r + 3){ okk = false; } }
+    for(let i=0;i<N;i++){ const a = ISL[i], b = ISL[(i+1)%N]; if(2*D*Math.sin(Math.PI/N) < (a.r + b.r)*1.08 + 1.2){ okk = false; } }
     if(okk) break; D += 1;
   }
   ISL.forEach((I,i) => { I.th = Math.PI/2 + i * 2*Math.PI/N; I.cx = D*Math.cos(I.th); I.cz = D*Math.sin(I.th); I.H = 0.9; });
 }
 
 function islandMesh(I, top, side, seed){
-  const r = rnd(seed), seg = 40, g = new THREE.CylinderGeometry(I.r, I.r*1.06, 1.6, seg, 1);
-  const pos = g.attributes.position, wob = [];
-  for(let i=0;i<=seg;i++) wob.push(1 + (r()-.5)*0.07);
-  for(let i=0;i<pos.count;i++){
-    const x = pos.getX(i), z = pos.getZ(i), a = Math.atan2(z, x); const k = Math.round(((a+Math.PI)/(2*Math.PI))*seg) % seg;
-    const f = (wob[k] + wob[(k+1)%seg]) / 2; pos.setX(i, x*f); pos.setZ(i, z*f);
-  }
-  g.computeVertexNormals();
-  const m = new THREE.Mesh(g, [lam(side), lam(top), lam(side)]);
-  m.position.set(I.cx, I.H - 0.8, I.cz); m.receiveShadow = true;
-  return m;
+  // hexagonal terrace: grass slab on top of a stone cliff (r = inscribed radius)
+  const R = I.r/0.866, g = new THREE.Group(), r = rnd(seed);
+  const cliff = new THREE.Mesh(new THREE.CylinderGeometry(R*1.02, R*1.1, 2.2, 6), lam('#b8a88f', { flatShading: true }));
+  cliff.position.y = -1.15; g.add(cliff);
+  const rim = new THREE.Mesh(new THREE.CylinderGeometry(R*1.035, R*1.035, .16, 6), lam('#d9cdb4'));
+  rim.position.y = -.02; g.add(rim);
+  const slab = new THREE.Mesh(new THREE.CylinderGeometry(R, R*1.01, .5, 6), lam(top, { flatShading: true }));
+  slab.position.y = -.25; slab.receiveShadow = true; g.add(slab);
+  g.rotation.y = -I.th;   // a flat side faces the plaza
+  g.position.set(I.cx, I.H, I.cz);
+  slab.userData.walk = { type: 'island', I }; W.walk.push(slab);
+  return g;
 }
 
 function tree(x, z, y, r, palette){
@@ -190,24 +195,98 @@ function bridge(I){
   scene.add(g);
 }
 
+/* ---------- facilities (one per station) ---------- */
+const WALL = ['#f6ecd8', '#f1e2c6', '#efe7da', '#f7e9d0'];
+const ROOFS = ['#a5452f', '#5d7f6a', '#8a5a3c', '#3f6f8f', '#b0413e', '#6b5a8a'];
+function pick(a, r){ return a[Math.floor(r()*a.length)]; }
+function F_tea(c, r){ const g = new THREE.Group(), w = pick(WALL, r), rf = pick(ROOFS, r);
+  const a = box(2, 1.2, 1.6, w); a.position.y = .6; g.add(a); const e = roof(2.5, 2.1, .5, rf); e.position.y = 1.4; g.add(e);
+  const b = box(1.4, .9, 1.1, w); b.position.y = 2.05; g.add(b); const e2 = roof(1.9, 1.6, .6, rf); e2.position.y = 2.8; g.add(e2);
+  const d = box(.5, .8, .05, '#7a4a2a'); d.position.set(0, .4, .81); g.add(d); const fl = box(.12, .5, .04, c); fl.position.set(.75, 1.05, .82); g.add(fl); return g; }
+function F_books(c, r){ const g = new THREE.Group(); const a = box(1.9, 1.5, 1.5, pick(WALL, r)); a.position.y = .75; g.add(a);
+  const rf = box(2.1, .18, 1.7, pick(ROOFS, r)); rf.position.y = 1.6; g.add(rf); const sign = box(1.2, .32, .06, '#3b2f25'); sign.position.set(0, 1.25, .78); g.add(sign);
+  for(let k=0;k<5;k++){ const bk = box(.14, .38 + (k%2)*.08, .3, ['#c0703a','#3a7ca5','#e0b04b','#6b8f5a','#a5452f'][k]); bk.position.set(-.45 + k*.2, .3, .9); g.add(bk); }
+  const sh = box(1.2, .06, .4, '#8b6b4a'); sh.position.set(0, .08, .9); g.add(sh); return g; }
+function F_stall(c, r){ const g = new THREE.Group(); const t = box(1.6, .7, .9, '#c49a6c'); t.position.y = .35; g.add(t);
+  for(let k=0;k<4;k++){ const f = new THREE.Mesh(new THREE.SphereGeometry(.13, 8, 6), lam(['#e85d3a','#f2c14e','#7fb069','#e0779a'][k])); f.position.set(-.5 + k*.33, .8, .2); g.add(f); }
+  const p = cyl(.04, .04, 1.9, '#6b4f37', 5); p.position.set(0, .95, -.2); g.add(p);
+  const u = new THREE.Mesh(new THREE.ConeGeometry(1.25, .55, 8), lam(c)); u.position.set(0, 2, -.2); g.add(u); return g; }
+function F_pav(c, r){ const g = new THREE.Group(); const base = cyl(1.1, 1.2, .2, '#d8ccb6', 6); base.position.y = .1; g.add(base);
+  for(let k=0;k<6;k++){ const a = k/6*Math.PI*2, p = cyl(.06, .06, 1.4, '#8b3b2e', 5); p.position.set(Math.cos(a)*.85, .9, Math.sin(a)*.85); g.add(p); }
+  const rf = new THREE.Mesh(new THREE.ConeGeometry(1.45, .8, 6), lam(pick(ROOFS, r))); rf.position.y = 1.95; g.add(rf);
+  const tb = cyl(.3, .3, .5, '#a07a52', 8); tb.position.y = .45; g.add(tb); return g; }
+function F_lantern(c, r){ const g = new THREE.Group(); const a = box(1.7, 1.3, 1.4, pick(WALL, r)); a.position.y = .65; g.add(a);
+  const rf = roof(2.2, 1.9, .7, pick(ROOFS, r)); rf.position.y = 1.65; g.add(rf);
+  const bar = box(1.8, .05, .05, '#5a4a3a'); bar.position.set(0, 1.25, .85); g.add(bar);
+  for(let k=0;k<3;k++){ const l = new THREE.Mesh(new THREE.SphereGeometry(.16, 10, 8), new THREE.MeshLambertMaterial({ color: C('#ff6a4d'), emissive: C('#c0391b'), emissiveIntensity: .6 })); l.scale.y = 1.25; l.position.set(-.6 + k*.6, 1.02, .87); g.add(l); } return g; }
+function F_garden(c, r){ const g = new THREE.Group(); const bed = cyl(1.1, 1.15, .25, '#8a6a4a', 10); bed.position.y = .12; g.add(bed);
+  const soil = cyl(1, 1, .05, '#6b8f4a', 10); soil.position.y = .27; g.add(soil);
+  for(let k=0;k<9;k++){ const a = r()*Math.PI*2, rr = r()*.8, f = new THREE.Mesh(new THREE.SphereGeometry(.15, 7, 5), lam(pick(['#f4a3b8','#ffd66b','#ffffff','#b9a4f0','#ff9a6b'], r))); f.position.set(Math.cos(a)*rr, .42, Math.sin(a)*rr); g.add(f); }
+  const arch = new THREE.Mesh(new THREE.TorusGeometry(.75, .06, 6, 16, Math.PI), lam('#8b6b4a')); arch.position.set(0, .3, .95); g.add(arch); return g; }
+function F_bell(c, r){ const g = new THREE.Group(); const base = box(1.5, .5, 1.5, '#b9ab95'); base.position.y = .25; g.add(base);
+  for(const [x,z] of [[-.55,-.55],[.55,-.55],[-.55,.55],[.55,.55]]){ const p = cyl(.07, .07, 1.7, '#8b3b2e', 5); p.position.set(x, 1.35, z); g.add(p); }
+  const rf = roof(1.7, 1.7, .9, pick(ROOFS, r)); rf.position.y = 2.6; g.add(rf);
+  const bl = new THREE.Mesh(new THREE.CylinderGeometry(.25, .42, .7, 12), lam('#b08d3a')); bl.position.y = 1.65; g.add(bl); return g; }
+function F_well(c, r){ const g = new THREE.Group(); const w = cyl(.65, .7, .6, '#a9a39a', 12); w.position.y = .3; g.add(w); const wt = cyl(.52, .52, .62, '#3d6f8f', 12); wt.position.y = .32; g.add(wt);
+  for(const x of [-.6, .6]){ const p = cyl(.05, .05, 1.5, '#6b4f37', 5); p.position.set(x, 1, 0); g.add(p); }
+  const rf = roof(1.5, 1, .55, pick(ROOFS, r)); rf.position.y = 1.95; g.add(rf);
+  const bk = cyl(.15, .12, .25, '#8b6b4a', 8); bk.position.set(.95, .12, .3); g.add(bk); return g; }
+function F_boat(c, r){ const g = new THREE.Group(); for(const [x,z] of [[-.7,-.5],[.7,-.5],[-.7,.5],[.7,.5]]){ const p = cyl(.07, .07, .7, '#6b4f37', 5); p.position.set(x, .35, z); g.add(p); }
+  const fl = box(1.8, .12, 1.4, '#a57b52'); fl.position.y = .75; g.add(fl); const h = box(1.4, .9, 1.1, pick(WALL, r)); h.position.y = 1.25; g.add(h);
+  const rf = roof(1.8, 1.5, .6, pick(ROOFS, r)); rf.position.y = 2; g.add(rf);
+  const oar = box(.06, .06, 1.4, '#8b6b4a'); oar.position.set(.95, .3, .2); oar.rotation.x = .5; g.add(oar); return g; }
+function F_incense(c, r){ const g = new THREE.Group(); const a = box(1.6, 1.1, 1.3, pick(WALL, r)); a.position.y = .55; g.add(a);
+  const rf = roof(2.1, 1.8, .6, pick(ROOFS, r)); rf.position.y = 1.4; g.add(rf);
+  const pot = cyl(.3, .22, .4, '#8a6d3b', 10); pot.position.set(0, .2, 1); g.add(pot);
+  for(let k=0;k<3;k++){ const st = cyl(.015, .015, .45, '#c44', 4); st.position.set(-.08 + k*.08, .6, 1); g.add(st); } return g; }
+function F_noodle(c, r){ const g = new THREE.Group(); const a = box(1.8, 1.3, 1.4, pick(WALL, r)); a.position.y = .65; g.add(a);
+  const aw = box(1.9, .08, .7, c); aw.position.set(0, 1.15, .95); aw.rotation.x = .35; g.add(aw);
+  const rf = box(1.95, .2, 1.55, pick(ROOFS, r)); rf.position.y = 1.4; g.add(rf);
+  const ch = cyl(.12, .12, .7, '#9c8f80', 6); ch.position.set(.55, 1.8, -.3); g.add(ch);
+  for(const x of [-.5, .5]){ const st = cyl(.18, .18, .4, '#a07a52', 8); st.position.set(x, .2, 1.35); g.add(st); } return g; }
+function F_hall(c, r){ const g = new THREE.Group(); const st = box(2.2, .25, 1.8, '#d8ccb6'); st.position.y = .12; g.add(st);
+  const a = box(1.9, 1.3, 1.4, pick(WALL, r)); a.position.y = .9; g.add(a); const rf = roof(2.6, 2.1, .9, pick(ROOFS, r)); rf.position.y = 1.95; g.add(rf);
+  for(const x of [-.75, .75]){ const p = cyl(.08, .08, 1.3, '#8b3b2e', 6); p.position.set(x, .9, .78); g.add(p); } return g; }
+const FAC = [['茶館', F_tea], ['書坊', F_books], ['市集攤', F_stall], ['涼亭', F_pav], ['燈籠舖', F_lantern], ['花圃', F_garden],
+  ['鐘樓', F_bell], ['水井', F_well], ['渡船屋', F_boat], ['香舖', F_incense], ['麵食舖', F_noodle], ['講堂', F_hall]];
+
 function buildIsland(I, idx){
   const grp = new THREE.Group(); scene.add(grp);
   const landC = C(T.land).offsetHSL(0, .1, -.24).lerp(C(I.color), .12);
-  const m = islandMesh(I, landC, T.sand, 100 + idx*13); scene.add(m); m.userData.walk = { type: 'island', I }; W.walk.push(m);
+  const m = islandMesh(I, landC, T.sand, 100 + idx*13); scene.add(m);
   const path = new THREE.Mesh(new THREE.RingGeometry(I.r*.5, I.r*.62, 40), lam('#f4ead6')); path.rotation.x = -Math.PI/2; path.position.set(I.cx, I.H+.01, I.cz); scene.add(path);
   const p = prop(I.prop, I.color); p.position.set(I.cx, I.H, I.cz); p.rotation.y = -I.th + Math.PI/2; scene.add(p); I.prop3 = p;
   p.traverse(o => { if(o.isMesh){ o.userData.island = I; W.clickable.push(o); } });
-  // pins
-  const toC = Math.atan2(-I.cz, -I.cx), n = I.stations.length, gap = .55, span = 2*Math.PI - 2*gap;
+  // stations = facilities around the island, each facing the centre
+  const toC = Math.atan2(-I.cz, -I.cx), n = I.stations.length, gap = .5, span = 2*Math.PI - 2*gap;
   I.stations.forEach((s, i) => {
-    const a = toC + gap + span * (n === 1 ? .5 : i/(n-1)), rr = I.r * .78;
+    const a = toC + gap + span * (n === 1 ? .5 : i/(n-1)), rr = I.r * .74;
     s.x = I.cx + Math.cos(a)*rr; s.z = I.cz + Math.sin(a)*rr; s.y = I.H;
-    const pin = new THREE.Group();
-    const stick = cyl(.05,.05,1.1,'#666',5); stick.position.y = .55; pin.add(stick);
-    const head = new THREE.Mesh(new THREE.SphereGeometry(.28, 12, 10), new THREE.MeshLambertMaterial({ color: C('#ffffff') })); head.position.y = 1.2; pin.add(head);
-    pin.position.set(s.x, s.y, s.z); scene.add(pin); s.head = head;
-    head.userData.station = s; W.clickable.push(head);
+    const F = FAC[(I.id*5 + i*7) % FAC.length]; s.fac = F[0];
+    const g = F[1](I.color, rnd(idx*97 + i));
+    g.position.set(s.x, s.y, s.z); g.rotation.y = Math.atan2(I.cx - s.x, I.cz - s.z); scene.add(g);
+    const top = new THREE.Box3().setFromObject(g).max.y;
+    s.door = [s.x + (I.cx - s.x)/rr*1.5, s.z + (I.cz - s.z)/rr*1.5];
+    const gem = new THREE.Mesh(new THREE.OctahedronGeometry(.3, 0), new THREE.MeshLambertMaterial({ color: C('#ffffff'), emissive: C('#3a3020') }));
+    gem.position.set(s.x, top + .55, s.z); scene.add(gem); s.head = gem; W.gems.push(gem); s.labelY = top + 1.3;
+    g.traverse(o => { if(o.isMesh){ o.castShadow = true; o.userData.station = s; W.clickable.push(o); } });
+    gem.userData.station = s; W.clickable.push(gem);
+    // a small paved apron in front of the door
+    const ap = new THREE.Mesh(new THREE.CircleGeometry(.9, 12), lam('#efe4cc')); ap.rotation.x = -Math.PI/2; ap.position.set(s.door[0], I.H + .015, s.door[1]); scene.add(ap);
   });
+  // village cottages filling the gaps between facilities
+  I.cot = [];
+  { const rc = rnd(700 + idx*29);
+    for(let t=0; t<80 && I.cot.length < 3 + Math.floor(I.r/4); t++){
+      const a = rc()*Math.PI*2, rr = I.r*(.36 + rc()*.5), x = I.cx + Math.cos(a)*rr, z = I.cz + Math.sin(a)*rr;
+      if(Math.abs(Math.atan2(Math.sin(a-toC), Math.cos(a-toC))) < .5 || Math.hypot(x-I.cx, z-I.cz) < 2.8) continue;
+      if(I.stations.some(s => Math.hypot(s.x-x, s.z-z) < 2.3 || Math.hypot(s.door[0]-x, s.door[1]-z) < 1.5)) continue;
+      if(I.cot.some(h => Math.hypot(h[0]-x, h[1]-z) < 1.6)) continue;
+      const g = new THREE.Group(), w = .7 + rc()*.4;
+      const b = box(w, .6, w*.8, pick(WALL, rc)); b.position.y = .3; g.add(b);
+      const rf = roof(w*1.25, w, .45, pick(ROOFS, rc)); rf.position.y = .82; g.add(rf);
+      g.position.set(x, I.H, z); g.rotation.y = rc()*Math.PI*2; g.traverse(o => { if(o.isMesh) o.castShadow = true; }); scene.add(g); I.cot.push([x, z]);
+    } }
   // trees
   const r = rnd(500 + idx*31), pal = ['#7fb069','#9cc47a','#6aa35a', '#f2b5c6', '#f6c48b'];
   let placed = 0, tries = 0;
@@ -215,7 +294,8 @@ function buildIsland(I, idx){
     const a = r()*Math.PI*2, rr = I.r*(.32 + r()*.6), x = I.cx + Math.cos(a)*rr, z = I.cz + Math.sin(a)*rr;
     if(Math.abs(Math.atan2(Math.sin(a-toC), Math.cos(a-toC))) < .45) continue;
     if(Math.hypot(x-I.cx, z-I.cz) < 2.6) continue;
-    if(I.stations.some(s => Math.hypot(s.x-x, s.z-z) < 1.6)) continue;
+    if(I.stations.some(s => Math.hypot(s.x-x, s.z-z) < 2.2 || Math.hypot(s.door[0]-x, s.door[1]-z) < 1.2)) continue;
+    if((I.cot || []).some(h => Math.hypot(h[0]-x, h[1]-z) < 1.4)) continue;
     scene.add(tree(x, z, I.H, r, pal)); placed++;
   }
   // lanterns
@@ -247,7 +327,7 @@ function buildIsland(I, idx){
     const boat = new THREE.Group(); const hull = box(1.5, .35, .6, ['#c0703a', '#3a7ca5', '#e0b04b'][idx % 3]); boat.add(hull); const seat = box(.2, .06, .5, '#f1e4cc'); seat.position.y = .2; boat.add(seat);
     const bx = x + Math.cos(a)*2.2 + Math.cos(a + Math.PI/2)*1.2, bz = z + Math.sin(a)*2.2 + Math.sin(a + Math.PI/2)*1.2; boat.position.set(bx, .15, bz); boat.rotation.y = -a + Math.PI/2; boat.userData.y0 = .15; scene.add(boat); W.bob.push(boat); }
   // ripples
-  for(let k=0;k<2;k++){ const rg = new THREE.Mesh(new THREE.RingGeometry(I.r*1.08, I.r*1.12, 48), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: .4 })); rg.rotation.x = -Math.PI/2; rg.position.set(I.cx, .02, I.cz); rg.userData.ph = k*.5; scene.add(rg); W.ripples.push(rg); }
+  for(let k=0;k<2;k++){ const rg = new THREE.Mesh(new THREE.RingGeometry(I.r*1.2, I.r*1.24, 6), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: .4 })); rg.rotation.set(-Math.PI/2, 0, -(I.th + Math.PI/6)); rg.position.set(I.cx, .02, I.cz); rg.userData.ph = k*.5; scene.add(rg); W.ripples.push(rg); }
   bridge(I);
 }
 
@@ -285,6 +365,15 @@ function stepLinks(now){
 /* ---------- 天空與海上點綴 ---------- */
 const SKY = { clouds: [], boats: [] };
 function buildSky(){
+  // far mountain ring with a land shelf, like a distant coast
+  { const rm = rnd(77), mc = ['#9db8a8', '#8fae9d', '#a9c2b2', '#b7cbbd'];
+    const shelf = new THREE.Mesh(new THREE.RingGeometry(D*2.05, D*3.4, 48, 1), lam('#c9d8c0', { side: THREE.DoubleSide })); shelf.rotation.x = -Math.PI/2; shelf.position.y = .06; scene.add(shelf);
+    for(let i=0;i<34;i++){
+      const a = i/34*Math.PI*2 + rm()*.12, rr = D*2.35 + rm()*D*.6, h = 10 + rm()*16;
+      const m = new THREE.Mesh(new THREE.ConeGeometry(5 + rm()*6, h, 5 + Math.floor(rm()*3)), lam(mc[i%4], { flatShading: true }));
+      m.position.set(Math.cos(a)*rr, h/2 - .5, Math.sin(a)*rr); m.rotation.y = rm()*3; scene.add(m);
+      if(h > 20){ const cap = new THREE.Mesh(new THREE.ConeGeometry((5 + 3)*.35, h*.22, 5), lam('#f4f2ec', { flatShading: true })); cap.position.set(m.position.x, h - .5 - h*.11, m.position.z); scene.add(cap); }
+    } }
   const r = rnd(321), cm = lam('#ffffff', { transparent: true, opacity: .92 });
   for(let i=0;i<9;i++){
     const g = new THREE.Group(), n = 3 + Math.floor(r()*3);
@@ -357,7 +446,7 @@ function init3d(){
     const rect = renderer.domElement.getBoundingClientRect(); v2.set((e.clientX-rect.left)/rect.width*2-1, -(e.clientY-rect.top)/rect.height*2+1);
     ray.setFromCamera(v2, camera);
     const hit = ray.intersectObjects(W.clickable, false)[0];
-    if(hit){ if(hit.object.userData.station){ openStation(hit.object.userData.station); return; } if(hit.object.userData.island){ openIsland(hit.object.userData.island); return; } }
+    if(hit){ if(hit.object.userData.station){ goStation(hit.object.userData.station); return; } if(hit.object.userData.island){ openIsland(hit.object.userData.island); return; } }
     const g = ray.intersectObjects(W.walk, false)[0];
     if(g){ walkTo(g.point.x, g.point.z); }
   });
@@ -388,7 +477,58 @@ function walkTo(x, z){
   pts.push([x, z]);
   route = pts.map(([px,pz]) => new THREE.Vector3(px, 0, pz));
 }
+/* touch a facility -> learn */
+let keyMove = false;
+function goStation(s){
+  if(!ok3d || !me || !s.door) return openStation(s);
+  walkTo(s.door[0], s.door[1]);
+  const I = s.isl; flyTo(s.x*.6 + I.cx*.4, s.z*.6 + I.cz*.4, 24, Math.atan2(s.z - I.cz, s.x - I.cx));
+  toast(`走向${s.fac || ''}「${s.t}」…`);
+}
+function stepTouch(){
+  const r = regionOf(me.position.x, me.position.z); if(!r || r.t !== 'isl') return;
+  const fin = route.length ? route[route.length-1] : null;
+  for(const s of r.I.stations){
+    if(!s.door) continue;
+    const d = Math.hypot(me.position.x - s.door[0], me.position.z - s.door[1]);
+    if(d > 2.5){ s._in = false; continue; }
+    if(d < 1.4 && !s._in){
+      const target = fin && Math.hypot(fin.x - s.door[0], fin.z - s.door[1]) < .3;
+      if(route.length && !target) continue;          // just passing by
+      s._in = true;
+      if(!(current && current.s === s)){ if(s.head) s.head.userData.pulse = performance.now(); openStation(s); }
+    }
+  }
+}
+const keys = new Set();
+addEventListener('keydown', e => {
+  if(e.target.closest && e.target.closest('input,textarea,select,[contenteditable]')) return;
+  const k = e.key.toLowerCase(); if(['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright'].includes(k)){ keys.add(k); if(k.startsWith('arrow')) e.preventDefault(); }
+});
+addEventListener('keyup', e => keys.delete(e.key.toLowerCase()));
+addEventListener('blur', () => keys.clear());
+function stepKeys(dt){
+  if(!keys.size){ keyMove = false; return; }
+  let f = 0, sd = 0;
+  if(keys.has('w') || keys.has('arrowup')) f += 1; if(keys.has('s') || keys.has('arrowdown')) f -= 1;
+  if(keys.has('d') || keys.has('arrowright')) sd += 1; if(keys.has('a') || keys.has('arrowleft')) sd -= 1;
+  if(!f && !sd) return;
+  const fw = new THREE.Vector3().subVectors(controls.target, camera.position); fw.y = 0; fw.normalize();
+  const rt = new THREE.Vector3(-fw.z, 0, fw.x);
+  const mv = fw.multiplyScalar(f).add(rt.multiplyScalar(sd)).normalize().multiplyScalar(7*dt);
+  const nx = me.position.x + mv.x, nz = me.position.z + mv.z;
+  route = []; keyMove = true;
+  if(regionOf(nx, nz)){ me.position.x = nx; me.position.z = nz; }
+  else if(regionOf(nx, me.position.z)) me.position.x = nx; else if(regionOf(me.position.x, nz)) me.position.z = nz;
+  me.rotation.y = Math.atan2(mv.x, mv.z);
+  const r = regionOf(me.position.x, me.position.z); me.position.y = (r && r.t === 'isl') ? r.I.H : .62;
+  me.children[0].position.y = .55 + Math.abs(Math.sin(performance.now()/90))*.08;
+  // camera follows gently
+  const dx = me.position.x - controls.target.x, dz = me.position.z - controls.target.z;
+  controls.target.x += dx*.06; controls.target.z += dz*.06; camera.position.x += dx*.06; camera.position.z += dz*.06;
+}
 function stepAvatar(dt){
+  stepKeys(dt); if(me) stepTouch();
   if(!route.length) return;
   const t = route[0], dx = t.x - me.position.x, dz = t.z - me.position.z, d = Math.hypot(dx, dz), sp = 9*dt;
   if(d < sp){ me.position.x = t.x; me.position.z = t.z; route.shift(); }
@@ -425,7 +565,7 @@ function buildLabels(){
   mkPlate(`${esc(G.plaza.name)}`, 'plate plaza', () => { closePanel(); home(); walkTo(0, R0*.5); }, { x: 0, y: 7.2, z: 0, kind: 'plaza' });
   ISL.forEach(I => {
     I.plate = mkPlate('', 'plate', () => openIsland(I), { x: I.cx, y: I.H + 5.4, z: I.cz, kind: 'isl', I });
-    I.stations.forEach(s => { s.pinEl = mkPlate(String(s.n), 'pin', () => openStation(s), { x: s.x, y: s.y + 2.25, z: s.z, kind: 'pin', I }); });
+    I.stations.forEach(s => { s.pinEl = mkPlate(String(s.n), 'pin', () => goStation(s), { x: s.x, y: s.y + (s.labelY || 2.25), z: s.z, kind: 'pin', I }); s.pinEl.title = s.fac ? `${s.fac}・${s.t}` : s.t; });
   });
   LINKS.forEach(L => { if(L.mid) L.plate = mkPlate(`<span style="background:${L.col}">${L.n}</span>`, 'lnk', () => openLink(L), { x: L.mid.x, y: L.mid.y + .6, z: L.mid.z, kind: 'link', L }); });
   meLabel = mkPlate('★ 我', 'pin me', null, { me: true, kind: 'me' });
@@ -435,7 +575,7 @@ let meLabel;
 function refreshLabels(){
   ISL.forEach(I => {
     const n = rCount(I);
-    I.plate.innerHTML = `<span class="no" style="background:${I.color}">${I.id}</span>${esc(I.name)}<span class="pg">${n}/${I.stations.length}</span>${pass.has(I.id) ? '<span class="stamp">印</span>' : ''}`;
+    I.plate.innerHTML = `<span class="no" style="background:${I.color}">${String(I.id).padStart(2,"0")}</span>${esc(I.name)}<span class="pg">${n}/${I.stations.length}</span>${pass.has(I.id) ? '<span class="stamp">印</span>' : ''}`;
     I.plate.setAttribute('aria-label', `${I.name}，已讀 ${n} / ${I.stations.length}${pass.has(I.id) ? '，已過關' : ''}`);
     I.stations.forEach(s => {
       const r = read.has(s.id); s.pinEl.style.background = r ? I.color : '#8a8f8c'; s.pinEl.classList.toggle('read', r);
@@ -494,7 +634,8 @@ function loop(){
     controls.target.lerpVectors(fly.from.t, fly.to.t, e); camera.position.lerpVectors(fly.from.p, fly.to.p, e);
     if(k >= 1) fly = null;
   }
-  controls.update(); stepAvatar(dt);
+  controls.update(); stepAvatar(dt); if(others.size) stepOthers(dt);
+  for(const g of W.gems){ g.rotation.y += dt*1.2; const p = g.userData.pulse; const k = p ? Math.max(0, 1 - (now - p)/700) : 0; g.scale.setScalar(1 + k*.8); g.position.y += Math.sin(now/500 + g.id)*.002; }
   const t = TIMES[tod], night = t.glow;
   for(const L of W.lanterns){
     const u = L.userData; let on = u.on, a = on ? 1 : 0;
@@ -546,7 +687,7 @@ function openIsland(I, opts={}){
 function openStation(s){
   if(curLink){ curLink = null; paintLinks(); }
   const I = s.isl; focusIsl = I; current = { I, s };
-  if(ok3d){ const ang = Math.atan2(s.z - I.cz, s.x - I.cx); flyTo(s.x*.6 + I.cx*.4, s.z*.6 + I.cz*.4, 24, ang); walkTo(I.cx + (s.x-I.cx)*.8, I.cz + (s.z-I.cz)*.8); }
+  if(ok3d){ const ang = Math.atan2(s.z - I.cz, s.x - I.cx); flyTo(s.x*.6 + I.cx*.4, s.z*.6 + I.cz*.4, 24, ang); if(s.door) walkTo(s.door[0], s.door[1]); else walkTo(I.cx + (s.x-I.cx)*.8, I.cz + (s.z-I.cz)*.8); }
   const first = !read.has(s.id);
   read.add(s.id); store.set('read', [...read]); refreshLabels();
   const src = G.key === 'lz' ? `〈${I.name}〉原文` : '《一貫道疑問解答》原文';
@@ -557,7 +698,7 @@ function openStation(s){
   if(SUTRA && G.key === 'lz'){ links.push(`<button class="chipbtn" data-wc="${I.id}">〈${esc(I.name)}〉經文全文</button>`); const k = s.quote && s.quote.length ? sutraKey(s.quote[0]) : ''; if(k) links.push(`<button class="chipbtn" data-wq="${esc(k)}">在經文中找這段</button>`); }
   if(s.ref) links.push(`<a class="chipbtn" href="${s.ref.href}">${esc(s.ref.label)}</a>`);
   showPanel(`
-    <div class="p-top"><div class="crumbs"><button data-isl>${esc(I.name)}</button><span>· 第 ${s.n} / ${I.stations.length} 站</span></div><button class="x" data-x aria-label="關閉">×</button></div>
+    <div class="p-top"><div class="crumbs"><button data-isl>${esc(I.name)}</button><span>· 第 ${s.n} / ${I.stations.length} 站${s.fac ? `・${esc(s.fac)}` : ''}</span></div><button class="x" data-x aria-label="關閉">×</button></div>
     <h2>${esc(s.t)}</h2>
     ${s.meta ? `<p class="meta">${esc(s.meta)}</p>` : ''}
     ${s.one ? `<p class="lead">${esc(s.one)}</p>` : ''}
@@ -568,12 +709,14 @@ function openStation(s){
     ${s.xyNote ? `<p class="small">${esc(s.xyNote)}</p>` : ''}
     ${s.links.length ? `<div class="rel"><h4>${ICON.link}相通線・和這一站相關</h4>${s.links.map(L => { const o = L.s.filter(x => x !== s); return `<button class="relb" data-lk="${L.n}"><span class="ln" style="background:${L.col || '#999'}">${L.n}</span><span><b>${esc(L.t)}</b><small>${o.map(x => `${esc(x.isl.name)}・${esc(x.t)}`).join('、')}</small></span></button>`; }).join('')}</div>` : ''}
     ${links.length ? `<div class="links">${links.join('')}</div>` : ''}
+    <div class="qa" data-qa></div>
     <nav class="pnav"><button class="btn" data-prev ${s.n === 1 ? 'disabled' : ''}>← 上一站</button>
       ${isLast || done && isLast ? `<button class="btn primary" data-isl>${done ? '回島上闖關 →' : '回到島上'}</button>` : `<button class="btn primary" data-next>下一站 →</button>`}</nav>`);
   panel.querySelectorAll('[data-isl]').forEach(b => b.onclick = () => openIsland(I, { noFly: false }));
   panel.querySelector('[data-x]').onclick = closePanel;
   const pv = panel.querySelector('[data-prev]'); if(pv) pv.onclick = () => { if(s.n > 1) openStation(I.stations[s.n-2]); };
   const nx = panel.querySelector('[data-next]'); if(nx) nx.onclick = () => openStation(I.stations[s.n]);
+  qaMount(s, panel.querySelector('[data-qa]'));
   panel.querySelectorAll('[data-book]').forEach(b => b.onclick = () => openBook(+b.dataset.book));
   panel.querySelectorAll('[data-wc]').forEach(b => b.onclick = () => openSutra({ ch: +b.dataset.wc }));
   panel.querySelectorAll('[data-lk]').forEach(b => b.onclick = () => openLink(LINKS[+b.dataset.lk - 1], s));
@@ -777,7 +920,7 @@ function renderSutra(){
   C1.querySelectorAll('[data-c]').forEach(b => b.onclick = () => { wCh = +b.dataset.c; renderSutra(); bookEl.scrollTop = 0; });
   const chs = SUTRA.ch.filter(c => !wCh || c.n === wCh);
   const L = bookEl.querySelector('#wL'), N1 = bookEl.querySelector('#wN');
-  const head = c => `<div class="wh"><h4>${esc(c.name)}第${CNUM[c.n-1]}</h4>${c.name !== c.isl ? `<span class="small">本站島名〈${esc(c.isl)}〉</span>` : ''}<button class="chipbtn" data-is="${c.n}">去${esc(c.isl)}島 →</button></div>`;
+  const head = c => `<div class="wh"><h4>${esc(c.name)}第${CNUM[c.n-1]}</h4><button class="chipbtn" data-is="${c.n}">去${esc(c.isl)}島 →</button></div>`;
   const para = (c, p, i, q) => { const t = wTxt(p); return `<p class="sp${typeof p === 'string' ? '' : ' verse'}" id="w${c.n}p${i+1}">${hl(t, q)}</p>`; };
   if(wQ){
     let n = 0;
@@ -805,10 +948,145 @@ function welcome(){
   modal.querySelector('[data-go]').onclick = () => { store.set('welcome', 1); closeModal(); };
 }
 
+/* ---------- together: presence + questions & answers (Google Sheet via Apps Script) ---------- */
+const API = (window.YC_API || '').trim();
+const myId = (() => { try{ let v = localStorage.getItem('yc-id'); if(!v){ v = Math.random().toString(36).slice(2, 10); localStorage.setItem('yc-id', v); } return v; }catch(e){ return Math.random().toString(36).slice(2, 10); } })();
+const PCOL = ['#e0773c', '#3f8fc0', '#c2489a', '#4d9a5b', '#c9a227', '#7a5cc4', '#d0574f', '#2f9e9a'];
+let who = (() => { try{ return JSON.parse(localStorage.getItem('yc-who') || 'null'); }catch(e){ return null; } })();
+function saveWho(w){ who = w; try{ localStorage.setItem('yc-who', JSON.stringify(w)); }catch(e){} if(me && who) me.children[0].material.color.set(who.c); if(meLabel && who) meLabel.textContent = '★ ' + who.n; }
+async function api(op, data = {}){
+  if(!API) throw new Error('noapi');
+  const r = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(Object.assign({ op, site: G.key, uid: myId }, data)) });
+  const j = await r.json(); if(!j.ok) throw new Error(j.err || 'error'); return j;
+}
+const ago = t => { const d = (Date.now() - t)/1000; return d < 60 ? '剛剛' : d < 3600 ? `${Math.floor(d/60)} 分鐘前` : d < 86400 ? `${Math.floor(d/3600)} 小時前` : `${Math.floor(d/86400)} 天前`; };
+function askName(then){
+  const cur = who || { n: '', c: PCOL[Math.floor(Math.random()*PCOL.length)] };
+  openModal(`<div class="p-top"><h2>先取個暱稱</h2><button class="x" data-x aria-label="關閉">×</button></div>
+    <p class="small">大家在島上看到的就是這個名字，提問和回答也會署這個名字。請不要用全名或電話。</p>
+    <label class="fld"><span>暱稱</span><input id="whoN2" maxlength="12" value="${esc(cur.n)}" placeholder="例如：小明"></label>
+    <div class="fld"><span>角色顏色</span><div class="swatches">${PCOL.map(c => `<button class="swc${c === cur.c ? ' on' : ''}" data-c="${c}" style="background:${c}" aria-label="顏色 ${c}"></button>`).join('')}</div></div>
+    <div class="mrow"><button class="btn primary" data-ok>好了</button></div>`, 'narrow');
+  let col = cur.c;
+  modal.querySelectorAll('[data-c]').forEach(b => b.onclick = () => { col = b.dataset.c; modal.querySelectorAll('.swc').forEach(x => x.classList.toggle('on', x === b)); });
+  modal.querySelector('[data-x]').onclick = closeModal;
+  const inp = modal.querySelector('#whoN2'); setTimeout(() => inp.focus(), 50);
+  const ok = () => { const n = inp.value.trim().slice(0, 12); if(!n){ inp.focus(); return; } saveWho({ n, c: col }); closeModal(); if(then) then(); };
+  modal.querySelector('[data-ok]').onclick = ok; inp.onkeydown = e => { if(e.key === 'Enter') ok(); };
+}
+const needName = fn => () => who ? fn() : askName(fn);
+
+/* other avatars */
+const others = new Map();
+function mkOther(o){
+  const g = new THREE.Group();
+  const body = cyl(.3, .4, 1.05, o.c || '#888', 12); body.position.y = .55; g.add(body);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(.3, 12, 10), lam('#f5d6b8')); head.position.y = 1.35; g.add(head);
+  const hair = new THREE.Mesh(new THREE.SphereGeometry(.32, 12, 8, 0, Math.PI*2, 0, Math.PI/2), lam('#3a2a20')); hair.position.y = 1.4; g.add(hair);
+  g.position.set(o.x, .62, o.z); scene.add(g);
+  const el = mkPlate(esc(o.n), 'pin who', null, { x: o.x, y: 2.1, z: o.z, kind: 'who' }); el.style.background = o.c;
+  return { g, el, tx: o.x, tz: o.z, c: o.c };
+}
+function syncOthers(list){
+  const seen = new Set();
+  for(const o of list){
+    if(o.id === myId) continue; seen.add(o.id);
+    let a = others.get(o.id);
+    if(!a){ if(!ok3d || !scene) continue; a = mkOther(o); others.set(o.id, a); }
+    a.tx = o.x; a.tz = o.z; a.n = o.n; a.st = o.st; a.el.textContent = o.n; a.el.title = o.st ? `${o.n}・正在看「${o.st}」` : o.n;
+    if(a.c !== o.c){ a.c = o.c; a.g.children[0].material.color.set(o.c); a.el.style.background = o.c; }
+  }
+  for(const [id, a] of others) if(!seen.has(id)){ scene.remove(a.g); a.el.remove(); const i = plates.findIndex(p => p.el === a.el); if(i >= 0) plates.splice(i, 1); others.delete(id); }
+  online = list.filter(o => o.id !== myId);
+  $('#whoN').textContent = online.length + 1;
+}
+let online = [];
+function stepOthers(dt){
+  for(const a of others.values()){
+    const p = a.g.position, dx = a.tx - p.x, dz = a.tz - p.z, d = Math.hypot(dx, dz);
+    if(d > .05){ const k = Math.min(1, dt*3); p.x += dx*k; p.z += dz*k; a.g.rotation.y = Math.atan2(dx, dz); a.g.children[0].position.y = .55 + Math.abs(Math.sin(performance.now()/90))*.06; }
+    const r = regionOf(p.x, p.z); p.y = (r && r.t === 'isl') ? r.I.H : .62;
+    const pl = plates.find(q => q.el === a.el); if(pl){ pl.world.x = p.x; pl.world.y = p.y + 2.1; pl.world.z = p.z; }
+  }
+}
+let presT = 0, presFail = 0;
+async function presence(){
+  if(!API || !who || document.hidden) return;
+  try{
+    const p = me ? me.position : { x: 0, z: 0 };
+    const j = await api('pos', { n: who.n, c: who.c, x: +p.x.toFixed(2), z: +p.z.toFixed(2), st: current ? current.s.t : '' });
+    presFail = 0; syncOthers(j.list || []);
+    if(j.unans != null) setUnans(j.unans);
+  }catch(e){ presFail++; }
+}
+function setUnans(n){ const b = $('#qaN'); b.hidden = !n; b.textContent = n; }
+
+/* station Q&A */
+function qaItem(q){
+  return `<li class="qi" data-q="${esc(q.id)}"><div class="qh"><span class="dot" style="background:${esc(q.c || '#999')}"></span><b>${esc(q.n)}</b><small>${ago(q.t)}</small></div>
+    <p class="qt">${esc(q.text)}</p>
+    <ul class="alist">${(q.ans || []).map(a => `<li><div class="qh"><span class="dot" style="background:${esc(a.c || '#999')}"></span><b>${esc(a.n)}</b><small>${ago(a.t)}</small></div><p>${esc(a.text)}</p></li>`).join('')}</ul>
+    <button class="linkbtn" data-rep>回答這個問題${q.ans && q.ans.length ? `（已有 ${q.ans.length} 則）` : ''}</button>
+    <div class="rep" hidden><textarea maxlength="500" rows="2" placeholder="分享您的體會或經文出處…"></textarea><button class="btn primary sm" data-send>送出回答</button></div></li>`;
+}
+async function qaMount(s, box){
+  if(!box) return;
+  const head = `<h4>${ICON.chat}提問與回答</h4>`;
+  if(!API){ box.innerHTML = `${head}<p class="small">留言區還沒連上試算表，設定好後這裡就能提問，也能回答其他道親的問題。</p>`; return; }
+  box.innerHTML = `${head}<ul class="qlist"><li class="small">載入中…</li></ul>
+    <div class="askf"><textarea maxlength="500" rows="2" placeholder="讀到這一站有什麼疑問？寫下來，大家一起想。"></textarea><button class="btn primary sm" data-ask>提出疑問</button></div>
+    <p class="small">留言大家都看得到；前賢會整理不合適的內容。</p>`;
+  const load = async () => {
+    try{
+      const j = await api('list', { sid: s.id });
+      if(!(current && current.s === s)) return;
+      const ul = box.querySelector('.qlist');
+      ul.innerHTML = j.qs.length ? j.qs.map(qaItem).join('') : '<li class="small">這一站還沒有人提問，您可以當第一位。</li>';
+      ul.querySelectorAll('[data-rep]').forEach(b => b.onclick = needName(() => { const r = b.nextElementSibling; r.hidden = false; r.querySelector('textarea').focus(); }));
+      ul.querySelectorAll('[data-send]').forEach(b => b.onclick = async () => {
+        const li = b.closest('[data-q]'), ta = li.querySelector('.rep textarea'), t = ta.value.trim(); if(!t) return ta.focus();
+        b.disabled = true; try{ await api('answer', { qid: li.dataset.q, n: who.n, c: who.c, text: t }); toast('回答已送出，感恩'); load(); }catch(e){ toast(/太快/.test(e.message) ? e.message : '送出失敗，請稍後再試'); b.disabled = false; }
+      });
+    }catch(e){ const ul = box.querySelector('.qlist'); if(ul) ul.innerHTML = '<li class="small">暫時連不上留言區，請稍後再試。</li>'; }
+  };
+  box.querySelector('[data-ask]').onclick = needName(async () => {
+    const ta = box.querySelector('.askf textarea'), t = ta.value.trim(); if(!t) return ta.focus();
+    const b = box.querySelector('[data-ask]'); b.disabled = true;
+    try{ await api('ask', { sid: s.id, st: `${s.isl.name}・${s.t}`, n: who.n, c: who.c, text: t }); ta.value = ''; toast('疑問已送出，其他道親可以回答'); load(); }
+    catch(e){ toast(/太快/.test(e.message) ? e.message : '送出失敗，請稍後再試'); } b.disabled = false;
+  });
+  load();
+}
+async function openQA(){
+  showPanel(`<div class="p-top"><h2>${ICON.chat}提問與回答</h2><button class="x" data-x aria-label="關閉">×</button></div>
+    <p class="lead">大家在各站留下的疑問。點一則就會走到那一站，可以在那裡回答。</p>
+    ${API ? `<div class="seg"><button class="on" data-f="all">最新</button><button data-f="un">還沒有人回答</button></div><ul class="qlist rq"><li class="small">載入中…</li></ul>` : '<p class="small">留言區還沒連上試算表，設定好後就能使用。</p>'}`);
+  panel.querySelector('[data-x]').onclick = closePanel;
+  if(!API) return;
+  let qs = [], f = 'all';
+  const draw = () => { const ul = panel.querySelector('.rq'); if(!ul) return; const v = f === 'un' ? qs.filter(q => !q.na) : qs;
+    ul.innerHTML = v.length ? v.map(q => `<li><button class="rqb" data-sid="${esc(q.sid)}"><span class="qh"><span class="dot" style="background:${esc(q.c || '#999')}"></span><b>${esc(q.n)}</b><small>${ago(q.t)}・${esc(q.st || '')}</small></span><span class="qt">${esc(q.text)}</span><span class="na${q.na ? '' : ' zero'}">${q.na ? `${q.na} 則回答` : '等待回答'}</span></button></li>`).join('') : '<li class="small">目前沒有。</li>';
+    ul.querySelectorAll('[data-sid]').forEach(b => b.onclick = () => { const st = ALL.find(x => x.id === b.dataset.sid); if(st) (ok3d ? goStation : openStation)(st); if(ok3d && st) setTimeout(() => { if(!(current && current.s === st)) openStation(st); }, 6000); }); };
+  panel.querySelectorAll('[data-f]').forEach(b => b.onclick = () => { f = b.dataset.f; panel.querySelectorAll('[data-f]').forEach(x => x.classList.toggle('on', x === b)); draw(); });
+  try{ const j = await api('recent'); qs = j.qs; setUnans(qs.filter(q => !q.na).length); draw(); }
+  catch(e){ const ul = panel.querySelector('.rq'); if(ul) ul.innerHTML = '<li class="small">暫時連不上留言區，請稍後再試。</li>'; }
+}
+function openWho(){
+  const rows = online.map(o => `<li><span class="dot" style="background:${esc(o.c)}"></span><b>${esc(o.n)}</b><small>${o.st ? `正在看「${esc(o.st)}」` : '在島上散步'}</small></li>`).join('');
+  openModal(`<div class="p-top"><h2>${ICON.people}同修在線</h2><button class="x" data-x aria-label="關閉">×</button></div>
+    ${API ? `<ul class="wlist"><li><span class="dot" style="background:${esc(who ? who.c : T.accent)}"></span><b>${esc(who ? who.n : '我')}</b><small>（我）</small></li>${rows || ''}</ul>${rows ? '' : '<p class="small">現在只有您在島上。邀請班上的道親一起打開這個網址，就會看到彼此的角色。</p>'}`
+      : '<p class="small">多人同遊還沒連上試算表，設定好後就能看到其他道親的角色。</p>'}
+    <div class="mrow"><button class="btn" data-nm>${who ? '改暱稱或顏色' : '取個暱稱加入'}</button><button class="btn primary" data-x2>好</button></div>`, 'narrow');
+  modal.querySelector('[data-x]').onclick = closeModal; modal.querySelector('[data-x2]').onclick = closeModal;
+  modal.querySelector('[data-nm]').onclick = () => askName(() => presence());
+}
+
 /* ---------- wire up ---------- */
 $('#bHome').onclick = () => { closePanel(); closeModal(); if(ok3d) home(); };
 $('#bList').onclick = openList;
 $('#bPass').onclick = openPassport;
+$('#bQA').onclick = openQA;
+$('#bWho').onclick = openWho;
 if(BOOK) $('#bBook').onclick = () => openBook();
 if(SUTRA) $('#bSutra').onclick = () => openSutra();
 if(LINKS.length){ $('#bLink').onclick = openLinks; $('#bLink').classList.toggle('on', showLines); }
@@ -834,4 +1112,11 @@ else if(SUTRA && (m = h.match(/^w(\d*)(?:p(\d+))?$/))){ openSutra({ ch: +m[1] ||
 else if(G.legacy && (m = h.match(G.legacy.re))){ const s = G.legacy.map(+m[1]); if(s) openStation(ALL.find(x => x.id === s)); }
 else if(!store.get('welcome', 0)) welcome();
 else if(!ok3d) openList();
+// together
+if(who) saveWho(who);
+if(API){
+  presence(); setInterval(() => presence(), 3000);
+  api('recent').then(j => setUnans(j.qs.filter(q => !q.na).length)).catch(() => {});
+  if(!who) setTimeout(() => { if(!who && modal.hidden) askName(() => presence()); }, 5000);
+} else { $('#whoN').textContent = '1'; }
 })();
