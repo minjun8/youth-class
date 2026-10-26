@@ -185,7 +185,7 @@ function bridge(I){
 
 function buildIsland(I, idx){
   const grp = new THREE.Group(); scene.add(grp);
-  const m = islandMesh(I, T.land, T.sand, 100 + idx*13); scene.add(m); m.userData.walk = { type: 'island', I }; W.walk.push(m);
+  const m = islandMesh(I, C(T.land).offsetHSL(0, .12, -.08), T.sand, 100 + idx*13); scene.add(m); m.userData.walk = { type: 'island', I }; W.walk.push(m);
   const path = new THREE.Mesh(new THREE.RingGeometry(I.r*.5, I.r*.62, 40), lam('#f4ead6')); path.rotation.x = -Math.PI/2; path.position.set(I.cx, I.H+.01, I.cz); scene.add(path);
   const p = prop(I.prop, I.color); p.position.set(I.cx, I.H, I.cz); p.rotation.y = -I.th + Math.PI/2; scene.add(p); I.prop3 = p;
   p.traverse(o => { if(o.isMesh){ o.userData.island = I; W.clickable.push(o); } });
@@ -232,7 +232,7 @@ function init3d(){
   const mobile = Math.min(innerWidth, innerHeight) < 600;
   renderer.shadowMap.enabled = !mobile; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   host.appendChild(renderer.domElement);
-  scene = new THREE.Scene(); fogCol = C('#bfe3ef'); scene.fog = new THREE.Fog(fogCol, 90, 220);
+  scene = new THREE.Scene(); fogCol = C('#bfe3ef'); scene.fog = new THREE.Fog(fogCol, 120, 320);
   camera = new THREE.PerspectiveCamera(42, host.clientWidth/host.clientHeight, .5, 600);
   hemi = new THREE.HemisphereLight(0xffffff, 0x8fb3a0, .9); scene.add(hemi);
   sun = new THREE.DirectionalLight(0xffffff, .8); sun.position.set(40, 70, 30); sun.castShadow = true;
@@ -256,10 +256,10 @@ function init3d(){
   me.position.set(0, .6, R0*.6); scene.add(me);
   controls = new THREE.OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true; controls.dampingFactor = .08; controls.maxPolarAngle = Math.PI*.42; controls.minPolarAngle = Math.PI*.12;
-  controls.minDistance = 14; controls.maxDistance = 150; controls.screenSpacePanning = false;
+  controls.minDistance = 14; controls.maxDistance = 230; controls.screenSpacePanning = false;
   home(true);
   ISL.forEach(I => setLit(I, pass.has(I.id), false));
-  addEventListener('resize', () => { renderer.setSize(host.clientWidth, host.clientHeight); camera.aspect = host.clientWidth/host.clientHeight; camera.updateProjectionMatrix(); });
+  addEventListener('resize', () => { renderer.setSize(host.clientWidth, host.clientHeight); camera.aspect = host.clientWidth/host.clientHeight; camera.updateProjectionMatrix(); viewShift(); });
   // click vs drag
   let down = null; const ray = new THREE.Raycaster(), v2 = new THREE.Vector2();
   renderer.domElement.addEventListener('pointerdown', e => { down = { x: e.clientX, y: e.clientY }; });
@@ -320,7 +320,8 @@ function flyTo(tx, tz, dist, ang){
   fly = { from, to: { t: tgt, p: pos }, t0: performance.now(), dur: 900 };
 }
 function home(instant){
-  const dist = D*2.7 + 20;
+  const st = $('#stage'), asp = st.clientWidth / Math.max(1, st.clientHeight);
+  const dist = (D*2.7 + 20) * Math.max(1, Math.min(1.9, .8/asp));
   if(instant){ controls.target.set(0,0,0); camera.position.set(0, dist*.68, dist*.72); controls.update(); }
   else flyTo(0, 0, dist, Math.PI/2);
 }
@@ -373,9 +374,9 @@ function placeLabels(){
 
 /* ---------- time of day ---------- */
 const TIMES = {
-  dawn: { bg: '#f6d9bd', sky: '#ffe8cf', gnd: '#9fc1b0', hi: .85, sun: '#ffd2a1', si: .75, sp: [60, 30, 50], sea: .96, star: 0, glow: .55 },
-  noon: { bg: '#bfe3ef', sky: '#ffffff', gnd: '#8fb3a0', hi: .9, sun: '#fff6e2', si: .85, sp: [30, 80, 40], sea: 1, star: 0, glow: .45 },
-  dusk: { bg: '#f2b28c', sky: '#ffcfa0', gnd: '#8a7f9a', hi: .7, sun: '#ff9a5c', si: .7, sp: [-60, 25, -20], sea: .82, star: .15, glow: .8 },
+  dawn: { bg: '#f6d9bd', sky: '#ffe8cf', gnd: '#9fc1b0', hi: .62, sun: '#ffd2a1', si: .55, sp: [60, 30, 50], sea: .96, star: 0, glow: .55 },
+  noon: { bg: '#bfe3ef', sky: '#ffffff', gnd: '#8fb3a0', hi: .62, sun: '#fff6e2', si: .6, sp: [30, 80, 40], sea: 1, star: 0, glow: .45 },
+  dusk: { bg: '#f2b28c', sky: '#ffcfa0', gnd: '#8a7f9a', hi: .52, sun: '#ff9a5c', si: .55, sp: [-60, 25, -20], sea: .82, star: .15, glow: .8 },
   night: { bg: '#18233f', sky: '#6b7fb8', gnd: '#1d2a3a', hi: .38, sun: '#a9b8ff', si: .28, sp: [-30, 60, -40], sea: .42, star: 1, glow: 1 }
 };
 let tod = store.get('tod', 'noon'); if(!TIMES[tod]) tod = 'noon';
@@ -418,8 +419,15 @@ function loop(){
 
 /* ---------- panels ---------- */
 let current = null;
-function showPanel(html){ panel.innerHTML = html; panel.hidden = false; panel.scrollTop = 0; }
-function closePanel(){ panel.hidden = true; current = null; focusIsl = null; setHash(''); }
+function viewShift(){
+  if(!ok3d || !camera) return;
+  const st = $('#stage'), w = st.clientWidth, h = st.clientHeight;
+  if(panel.hidden){ camera.clearViewOffset(); return; }
+  if(w > 760) camera.setViewOffset(w, h, panel.offsetWidth/2, 0, w, h);
+  else camera.setViewOffset(w, h, 0, panel.offsetHeight*.42, w, h);
+}
+function showPanel(html){ panel.innerHTML = html; panel.hidden = false; panel.scrollTop = 0; viewShift(); }
+function closePanel(){ panel.hidden = true; current = null; focusIsl = null; setHash(''); viewShift(); }
 function setHash(h){ try{ history.replaceState(null, '', h ? '#'+h : location.pathname + location.search); }catch(e){} }
 
 function openIsland(I, opts={}){
