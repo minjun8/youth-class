@@ -1,7 +1,7 @@
 /* 群島樂園引擎：讀 window.GARDEN（與選用的 window.BOOK），畫出 3D 群島、圖釘、角色、護照與闖關題。 */
 (function(){
 'use strict';
-const G = window.GARDEN, BOOK = window.BOOK || null, T = G.theme;
+const G = window.GARDEN, BOOK = window.BOOK || null, SUTRA = window.SUTRA || null, T = G.theme;
 const ISL = G.islands, N = ISL.length;
 const root = document.documentElement;
 root.style.setProperty('--accent', T.accent); root.style.setProperty('--ink', T.ink); root.style.setProperty('--ui-bg', T.uiBg);
@@ -11,8 +11,12 @@ const store = {
   get(k, d){ try{ const v = localStorage.getItem(G.key+'-'+k); return v==null ? d : JSON.parse(v); }catch(e){ return d; } },
   set(k, v){ try{ localStorage.setItem(G.key+'-'+k, JSON.stringify(v)); }catch(e){} }
 };
-ISL.forEach(I => I.stations.forEach((s,i) => { s.n = i+1; s.id = I.id+'-'+(i+1); s.isl = I; }));
+ISL.forEach(I => I.stations.forEach((s,i) => { s.n = i+1; s.id = I.id+'-'+(i+1); s.isl = I; s.links = []; }));
 const ALL = ISL.flatMap(I => I.stations);
+const LINKS = (G.links || []).map((l, i) => ({ n: i+1, t: l.t, k: l.k, why: l.why, s: l.s.map(id => ALL.find(x => x.id === id)).filter(Boolean) })).filter(L => L.s.length >= 2);
+const LINKCOL = ['#e0773c', '#3f8fc0', '#c2489a', '#4d9a5b', '#c9a227', '#7a5cc4'];
+LINKS.forEach(L => { L.col = LINKCOL[(L.n-1) % LINKCOL.length]; L.s.forEach(s => s.links.push(L)); });
+let showLines = !!store.get('lines', 1), curLink = null;
 let read = new Set(store.get('read', []));
 let pass = new Set(store.get('pass', []));
 (G.migrate || []).forEach(fn => { try{ fn(read); }catch(e){} });
@@ -23,6 +27,7 @@ const $ = s => document.querySelector(s);
 
 /* ---------- DOM shell ---------- */
 const ICON = {
+  link:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 17C8 7 16 7 19 17"/><circle cx="5" cy="17" r="2.2"/><circle cx="19" cy="17" r="2.2"/></svg>',
   home:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>',
   list:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>',
   pass:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><circle cx="12" cy="10" r="3"/><path d="M8 17h8"/></svg>',
@@ -40,6 +45,8 @@ document.body.insertAdjacentHTML('beforeend', `
     <button class="tbtn" id="bHome">${ICON.home}<span class="lbl">全景</span></button>
     <button class="tbtn" id="bList">${ICON.list}<span class="lbl">島嶼清單</span></button>
     ${BOOK ? `<button class="tbtn" id="bBook">${ICON.book}<span class="lbl">全書</span></button>` : ''}
+    ${SUTRA ? `<button class="tbtn" id="bSutra">${ICON.book}<span class="lbl">經文全文</span></button>` : ''}
+    ${LINKS.length ? `<button class="tbtn" id="bLink">${ICON.link}<span class="lbl">相通線</span><span class="n">${LINKS.length}</span></button>` : ''}
     <button class="tbtn" id="bPass">${ICON.pass}<span class="lbl">學習護照</span><span class="n" id="passN">0/${N}</span></button>
   </nav>
   <div class="timebar" role="group" aria-label="時段">
@@ -56,7 +63,7 @@ const panel = $('#panel'), modal = $('#modal'), scrim = $('#scrim'), labels = $(
 /* ---------- 3D ---------- */
 let ok3d = !!window.THREE;
 let renderer, scene, camera, controls, hemi, sun, seaMat, stars, fogCol;
-const W = { islands: [], lanterns: [], pins: [], walk: [], ripples: [], clickable: [] };
+const W = { islands: [], lanterns: [], pins: [], walk: [], ripples: [], clickable: [], bob: [] };
 let R0 = 9, D = 30;
 
 function rnd(seed){ return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
@@ -185,7 +192,8 @@ function bridge(I){
 
 function buildIsland(I, idx){
   const grp = new THREE.Group(); scene.add(grp);
-  const m = islandMesh(I, C(T.land).offsetHSL(0, .1, -.24), T.sand, 100 + idx*13); scene.add(m); m.userData.walk = { type: 'island', I }; W.walk.push(m);
+  const landC = C(T.land).offsetHSL(0, .1, -.24).lerp(C(I.color), .12);
+  const m = islandMesh(I, landC, T.sand, 100 + idx*13); scene.add(m); m.userData.walk = { type: 'island', I }; W.walk.push(m);
   const path = new THREE.Mesh(new THREE.RingGeometry(I.r*.5, I.r*.62, 40), lam('#f4ead6')); path.rotation.x = -Math.PI/2; path.position.set(I.cx, I.H+.01, I.cz); scene.add(path);
   const p = prop(I.prop, I.color); p.position.set(I.cx, I.H, I.cz); p.rotation.y = -I.th + Math.PI/2; scene.add(p); I.prop3 = p;
   p.traverse(o => { if(o.isMesh){ o.userData.island = I; W.clickable.push(o); } });
@@ -213,9 +221,90 @@ function buildIsland(I, idx){
   // lanterns
   I.lan = [];
   for(let k=0;k<3;k++){ const a = toC + Math.PI + (k-1)*.9, rr = I.r*.45; const L = lantern(I.cx + Math.cos(a)*rr, I.cz + Math.sin(a)*rr, I.H); scene.add(L); I.lan.push(L); W.lanterns.push(L); }
+
+  // ---- scenery: path stones, hills, bushes, flowers, rocks, dock ----
+  const rs = rnd(900 + idx*17), stoneM = lam('#e9dfcc'), rockM = lam('#9a9a92'), rock2 = lam('#b7b2a6');
+  const free = (x, z, pad) => Math.hypot(x-I.cx, z-I.cz) > 2.6 && !I.stations.some(s => Math.hypot(s.x-x, s.z-z) < pad) && !I.lan.some(L => Math.hypot(L.position.x-x, L.position.z-z) < 1.1);
+  for(let k=0;k<5;k++){ const rr = I.r*(.66 + k*.075); const st = new THREE.Mesh(new THREE.CylinderGeometry(.42, .46, .08, 7), stoneM); st.position.set(I.cx + Math.cos(toC)*rr + (k%2 ? .25 : -.25)*Math.sin(toC), I.H + .04, I.cz + Math.sin(toC)*rr - (k%2 ? .25 : -.25)*Math.cos(toC)); st.rotation.y = rs()*3; st.receiveShadow = true; scene.add(st); }
+  const hillC = landC.clone().offsetHSL(0, .02, -.05);
+  for(let k=0;k<2;k++){ const a = toC + Math.PI + (k ? 1.7 : -1.7), rr = I.r*.5, x = I.cx + Math.cos(a)*rr, z = I.cz + Math.sin(a)*rr; if(!free(x, z, 2.2)) continue;
+    const h = new THREE.Mesh(new THREE.IcosahedronGeometry(1.5 + rs()*.6, 1), lam(hillC, { flatShading: true })); h.scale.set(1.3, .45, 1.1); h.position.set(x, I.H, z); h.rotation.y = rs()*3; h.receiveShadow = true; h.castShadow = true; scene.add(h); }
+  const bushM = [lam('#5f9a4f', { flatShading: true }), lam('#79ad5c', { flatShading: true })];
+  for(let k=0, t=0; k<6 && t<60; t++){ const a = rs()*Math.PI*2, rr = I.r*(.35 + rs()*.55), x = I.cx + Math.cos(a)*rr, z = I.cz + Math.sin(a)*rr; if(!free(x, z, 1.3) || Math.abs(Math.atan2(Math.sin(a-toC), Math.cos(a-toC))) < .4) continue;
+    const b = new THREE.Mesh(new THREE.IcosahedronGeometry(.38 + rs()*.25, 0), bushM[k%2]); b.position.set(x, I.H + .25, z); b.scale.y = .75; b.castShadow = true; scene.add(b); k++; }
+  const FLW = ['#f4a3b8', '#ffd66b', '#ffffff', '#b9a4f0', '#ff9a6b'], fg = new THREE.SphereGeometry(.11, 6, 5), fl = new THREE.InstancedMesh(fg, new THREE.MeshLambertMaterial(), 60), mt = new THREE.Matrix4();
+  let fi = 0;
+  for(let p=0, t=0; p<6 && t<80; t++){ const a = rs()*Math.PI*2, rr = I.r*(.3 + rs()*.6), cx = I.cx + Math.cos(a)*rr, cz = I.cz + Math.sin(a)*rr; if(!free(cx, cz, 1.2) || Math.abs(Math.atan2(Math.sin(a-toC), Math.cos(a-toC))) < .4) continue;
+    const col = C(FLW[Math.floor(rs()*FLW.length)]);
+    for(let q=0;q<10 && fi<60;q++){ mt.makeTranslation(cx + (rs()-.5)*1.1, I.H + .12, cz + (rs()-.5)*1.1); fl.setMatrixAt(fi, mt); fl.setColorAt(fi, col); fi++; } p++; }
+  fl.count = fi; if(fl.instanceColor) fl.instanceColor.needsUpdate = true; scene.add(fl);
+  for(let k=0;k<9;k++){ const a = rs()*Math.PI*2; if(Math.abs(Math.atan2(Math.sin(a-toC), Math.cos(a-toC))) < .35) continue; const rr = I.r*(1.0 + rs()*.08);
+    const rk = new THREE.Mesh(new THREE.DodecahedronGeometry(.35 + rs()*.45, 0), k%3 ? rockM : rock2); rk.position.set(I.cx + Math.cos(a)*rr, I.H - .65 + rs()*.2, I.cz + Math.sin(a)*rr); rk.rotation.set(rs()*3, rs()*3, rs()*3); rk.castShadow = true; scene.add(rk); }
+  if(idx % 2 === 0){ const a = toC + Math.PI + (idx % 4 ? .5 : -.5), rr = I.r*1.02, x = I.cx + Math.cos(a)*rr, z = I.cz + Math.sin(a)*rr;
+    const dock = new THREE.Group(); const plank = box(2.6, .14, 1, '#a57b52'); plank.position.set(1.1, I.H - .2, 0); dock.add(plank);
+    for(const px of [.2, 2.2]) for(const pz of [-.4, .4]){ const post = cyl(.07, .07, 1.2, '#6b4f37', 5); post.position.set(px, I.H - .6, pz); dock.add(post); }
+    dock.position.set(x, 0, z); dock.rotation.y = -a; scene.add(dock);
+    const boat = new THREE.Group(); const hull = box(1.5, .35, .6, ['#c0703a', '#3a7ca5', '#e0b04b'][idx % 3]); boat.add(hull); const seat = box(.2, .06, .5, '#f1e4cc'); seat.position.y = .2; boat.add(seat);
+    const bx = x + Math.cos(a)*2.2 + Math.cos(a + Math.PI/2)*1.2, bz = z + Math.sin(a)*2.2 + Math.sin(a + Math.PI/2)*1.2; boat.position.set(bx, .15, bz); boat.rotation.y = -a + Math.PI/2; boat.userData.y0 = .15; scene.add(boat); W.bob.push(boat); }
   // ripples
   for(let k=0;k<2;k++){ const rg = new THREE.Mesh(new THREE.RingGeometry(I.r*1.08, I.r*1.12, 48), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: .4 })); rg.rotation.x = -Math.PI/2; rg.position.set(I.cx, .02, I.cz); rg.userData.ph = k*.5; scene.add(rg); W.ripples.push(rg); }
   bridge(I);
+}
+
+/* ---------- 相通線 (3D) ---------- */
+let linkGrp = null;
+function buildLinks(){
+  linkGrp = new THREE.Group(); scene.add(linkGrp);
+  LINKS.forEach(L => {
+    const col = C(L.col); L.parts = []; L.beads = [];
+    for(let i=0;i<L.s.length-1;i++){
+      const a = L.s[i], b = L.s[i+1];
+      const A = new THREE.Vector3(a.x, a.y + 1.25, a.z), B = new THREE.Vector3(b.x, b.y + 1.25, b.z);
+      const d = A.distanceTo(B), M = A.clone().lerp(B, .5); M.y += 3 + d*.32;
+      const M2 = M.clone(); M2.x *= .92; M2.z *= .92;   // bow slightly toward the plaza
+      const curve = new THREE.QuadraticBezierCurve3(A, M2, B);
+      const mat = new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: .7, depthWrite: false });
+      const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, 48, .1, 6, false), mat); linkGrp.add(tube); L.parts.push(mat);
+      const bead = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex(), color: col, transparent: true, opacity: .95, depthWrite: false }));
+      bead.scale.set(1.3, 1.3, 1); bead.userData = { curve, ph: (L.n*.37) % 1 }; linkGrp.add(bead); L.beads.push(bead);
+      if(i === 0) L.mid = curve.getPoint(.5);
+    }
+  });
+  linkGrp.visible = showLines;
+}
+function paintLinks(){
+  if(!linkGrp) return;
+  linkGrp.visible = showLines || !!curLink;
+  LINKS.forEach(L => { const on = !curLink || curLink === L; L.parts.forEach(m => m.opacity = on ? (curLink ? .95 : .7) : .08); L.beads.forEach(b => { b.visible = on; b.scale.setScalar(curLink === L ? 1.8 : 1.3); }); if(L.plate) L.plate.classList.toggle('on', curLink === L); });
+}
+function stepLinks(now){
+  if(!linkGrp || !linkGrp.visible) return;
+  LINKS.forEach(L => L.beads.forEach(b => { if(!b.visible) return; const f = ((now/3200) + b.userData.ph) % 1; b.position.copy(b.userData.curve.getPoint(f)); }));
+}
+
+/* ---------- 天空與海上點綴 ---------- */
+const SKY = { clouds: [], boats: [] };
+function buildSky(){
+  const r = rnd(321), cm = lam('#ffffff', { transparent: true, opacity: .92 });
+  for(let i=0;i<9;i++){
+    const g = new THREE.Group(), n = 3 + Math.floor(r()*3);
+    for(let k=0;k<n;k++){ const p = new THREE.Mesh(new THREE.IcosahedronGeometry(1.6 + r()*1.4, 1), cm); p.position.set(k*2.1 - n, r()*.8, (r()-.5)*1.6); p.scale.y = .6; g.add(p); }
+    const a = r()*Math.PI*2, rr = D*.6 + r()*D*1.4; g.position.set(Math.cos(a)*rr, 26 + r()*14, Math.sin(a)*rr); g.userData = { a, rr, sp: .006 + r()*.01 };
+    scene.add(g); SKY.clouds.push(g);
+  }
+  for(let i=0;i<4;i++){
+    const g = new THREE.Group();
+    const hull = box(2.2, .5, .9, ['#b5653d','#3f7fa3','#d8a640','#8a5a8f'][i]); hull.position.y = .25; g.add(hull);
+    const mast = cyl(.05, .05, 2.4, '#5b4636', 5); mast.position.y = 1.4; g.add(mast);
+    const sail = new THREE.Mesh(new THREE.ConeGeometry(.9, 2, 3), lam('#fffaf0')); sail.position.set(.35, 1.55, 0); sail.scale.z = .15; g.add(sail);
+    g.userData = { a: i*1.57 + .4, rr: D + 13 + i*3, sp: (i%2 ? 1 : -1) * (.02 + i*.004) };
+    scene.add(g); SKY.boats.push(g);
+  }
+}
+function stepSky(dt, now){
+  SKY.clouds.forEach(g => { g.userData.a += g.userData.sp*dt; g.position.x = Math.cos(g.userData.a)*g.userData.rr; g.position.z = Math.sin(g.userData.a)*g.userData.rr; });
+  SKY.boats.forEach((g, i) => { const u = g.userData; u.a += u.sp*dt; g.position.set(Math.cos(u.a)*u.rr, Math.sin(now/600 + i)*.08, Math.sin(u.a)*u.rr); g.rotation.y = -u.a + (u.sp > 0 ? 0 : Math.PI); g.rotation.z = Math.sin(now/800 + i)*.05; });
+  W.bob.forEach((b, i) => { b.position.y = b.userData.y0 + Math.sin(now/700 + i)*.06; b.rotation.z = Math.sin(now/900 + i)*.05; });
 }
 
 function setLit(I, on, flash){
@@ -241,7 +330,7 @@ function init3d(){
   seaMat = new THREE.MeshLambertMaterial({ color: C(T.sea) });
   const sea = new THREE.Mesh(new THREE.CircleGeometry(400, 64), seaMat); sea.rotation.x = -Math.PI/2; sea.receiveShadow = true; scene.add(sea);
   const shallow = new THREE.Mesh(new THREE.CircleGeometry(D + 14, 64), new THREE.MeshLambertMaterial({ color: C(T.sea).lerp(C('#ffffff'), .18), transparent: true, opacity: .55 })); shallow.rotation.x = -Math.PI/2; shallow.position.y = .01; scene.add(shallow);
-  plazaBuild(); ISL.forEach(buildIsland);
+  plazaBuild(); ISL.forEach(buildIsland); buildLinks(); buildSky();
   // stars
   const sg = new THREE.BufferGeometry(), sp = []; const r = rnd(4);
   for(let i=0;i<500;i++){ const th = r()*Math.PI*2, ph = r()*Math.PI*.45; sp.push(Math.cos(th)*Math.sin(ph)*300, Math.cos(ph)*300 + 20, Math.sin(th)*Math.sin(ph)*300); }
@@ -338,6 +427,7 @@ function buildLabels(){
     I.plate = mkPlate('', 'plate', () => openIsland(I), { x: I.cx, y: I.H + 5.4, z: I.cz, kind: 'isl', I });
     I.stations.forEach(s => { s.pinEl = mkPlate(String(s.n), 'pin', () => openStation(s), { x: s.x, y: s.y + 2.25, z: s.z, kind: 'pin', I }); });
   });
+  LINKS.forEach(L => { if(L.mid) L.plate = mkPlate(`<span style="background:${L.col}">${L.n}</span>`, 'lnk', () => openLink(L), { x: L.mid.x, y: L.mid.y + .6, z: L.mid.z, kind: 'link', L }); });
   meLabel = mkPlate('★ 我', 'pin me', null, { me: true, kind: 'me' });
   refreshLabels();
 }
@@ -367,6 +457,7 @@ function placeLabels(){
     let dim = !vis;
     if(W0.kind === 'pin') dim = dim || dist > 78 || (cd > 70 && !(focusIsl === W0.I));
     if(W0.kind === 'me') dim = dim || dist > 110;
+    if(W0.kind === 'link') dim = dim || !(curLink ? curLink === W0.L : showLines);
     p.el.dataset.dim = dim ? '1' : '0';
     if(!dim) p.el.style.transform = `translate(${(vtmp.x*.5+.5)*w}px,${(-vtmp.y*.5+.5)*h}px) translate(-50%,-100%)`;
   }
@@ -414,6 +505,7 @@ function loop(){
   }
   for(const rg of W.ripples){ const f = ((now/2600) + rg.userData.ph) % 1; rg.scale.setScalar(1 + f*.18); rg.material.opacity = .45*(1-f); }
   ISL.forEach(I => { if(I.prop3.userData.spin){ I.prop3.userData.spin.rotation.y += dt*.5; I.prop3.userData.spin.position.y = 3.4 + Math.sin(now/700)*.15; } if(I.prop3.userData.smoke){ I.prop3.userData.smoke.material.opacity = .25 + Math.sin(now/500)*.1; } });
+  stepLinks(now); stepSky(dt, now);
   renderer.render(scene, camera); placeLabels();
 }
 
@@ -427,10 +519,11 @@ function viewShift(){
   else camera.setViewOffset(w, h, 0, panel.offsetHeight*.42, w, h);
 }
 function showPanel(html){ panel.innerHTML = html; panel.hidden = false; panel.scrollTop = 0; viewShift(); }
-function closePanel(){ panel.hidden = true; current = null; focusIsl = null; setHash(''); viewShift(); }
+function closePanel(){ panel.hidden = true; current = null; focusIsl = null; if(curLink){ curLink = null; paintLinks(); } setHash(''); viewShift(); }
 function setHash(h){ try{ history.replaceState(null, '', h ? '#'+h : location.pathname + location.search); }catch(e){} }
 
 function openIsland(I, opts={}){
+  if(curLink){ curLink = null; paintLinks(); }
   focusIsl = I; current = { I };
   if(ok3d && !opts.noFly){ flyTo(I.cx, I.cz, 34, I.th); walkTo(edgeIsl(I)[0], edgeIsl(I)[1]); }
   const n = rCount(I), all = I.stations.length, done = n === all, passed = pass.has(I.id);
@@ -451,6 +544,7 @@ function openIsland(I, opts={}){
 }
 
 function openStation(s){
+  if(curLink){ curLink = null; paintLinks(); }
   const I = s.isl; focusIsl = I; current = { I, s };
   if(ok3d){ const ang = Math.atan2(s.z - I.cz, s.x - I.cx); flyTo(s.x*.6 + I.cx*.4, s.z*.6 + I.cz*.4, 24, ang); walkTo(I.cx + (s.x-I.cx)*.8, I.cz + (s.z-I.cz)*.8); }
   const first = !read.has(s.id);
@@ -460,6 +554,7 @@ function openStation(s){
   const links = [];
   if(s.book && BOOK) s.book.forEach(n => links.push(`<button class="chipbtn" data-book="${n}">原書第 ${n} 題全文</button>`));
   if(s.xy) links.push(`<a class="chipbtn" href="liuzu.html#i1s${s.xy}">六祖〈行由品〉第 ${s.xy} 站 →</a>`);
+  if(SUTRA && G.key === 'lz'){ links.push(`<button class="chipbtn" data-wc="${I.id}">〈${esc(I.name)}〉經文全文</button>`); const k = s.quote && s.quote.length ? sutraKey(s.quote[0]) : ''; if(k) links.push(`<button class="chipbtn" data-wq="${esc(k)}">在經文中找這段</button>`); }
   if(s.ref) links.push(`<a class="chipbtn" href="${s.ref.href}">${esc(s.ref.label)}</a>`);
   showPanel(`
     <div class="p-top"><div class="crumbs"><button data-isl>${esc(I.name)}</button><span>· 第 ${s.n} / ${I.stations.length} 站</span></div><button class="x" data-x aria-label="關閉">×</button></div>
@@ -471,6 +566,7 @@ function openStation(s){
     ${s.point ? `<div class="box"><h4>這一站在說</h4><p>${esc(s.point)}</p></div>` : ''}
     <div class="box ask"><h4>想一想</h4><p>${esc(s.ask)}</p></div>
     ${s.xyNote ? `<p class="small">${esc(s.xyNote)}</p>` : ''}
+    ${s.links.length ? `<div class="rel"><h4>${ICON.link}相通線・和這一站相關</h4>${s.links.map(L => { const o = L.s.filter(x => x !== s); return `<button class="relb" data-lk="${L.n}"><span class="ln" style="background:${L.col || '#999'}">${L.n}</span><span><b>${esc(L.t)}</b><small>${o.map(x => `${esc(x.isl.name)}・${esc(x.t)}`).join('、')}</small></span></button>`; }).join('')}</div>` : ''}
     ${links.length ? `<div class="links">${links.join('')}</div>` : ''}
     <nav class="pnav"><button class="btn" data-prev ${s.n === 1 ? 'disabled' : ''}>← 上一站</button>
       ${isLast || done && isLast ? `<button class="btn primary" data-isl>${done ? '回島上闖關 →' : '回到島上'}</button>` : `<button class="btn primary" data-next>下一站 →</button>`}</nav>`);
@@ -479,8 +575,52 @@ function openStation(s){
   const pv = panel.querySelector('[data-prev]'); if(pv) pv.onclick = () => { if(s.n > 1) openStation(I.stations[s.n-2]); };
   const nx = panel.querySelector('[data-next]'); if(nx) nx.onclick = () => openStation(I.stations[s.n]);
   panel.querySelectorAll('[data-book]').forEach(b => b.onclick = () => openBook(+b.dataset.book));
+  panel.querySelectorAll('[data-wc]').forEach(b => b.onclick = () => openSutra({ ch: +b.dataset.wc }));
+  panel.querySelectorAll('[data-lk]').forEach(b => b.onclick = () => openLink(LINKS[+b.dataset.lk - 1], s));
+  panel.querySelectorAll('[data-wq]').forEach(b => b.onclick = () => openSutra({ q: b.dataset.wq }));
   setHash(`i${I.id}s${s.n}`);
   if(first && done) toast(`${I.name}全部讀完，可以闖關了！`);
+}
+
+/* ---------- 相通線 panels ---------- */
+function setLines(on){ showLines = on; store.set('lines', on ? 1 : 0); paintLinks(); const b = $('#bLink'); if(b) b.classList.toggle('on', on); }
+function linkCard(L){ return `<button class="lrow" data-lk="${L.n}"><span class="ln" style="background:${L.col || '#999'}">${L.n}</span><span class="lt"><b>${esc(L.t)}</b><small>${L.s.map(x => `${esc(x.isl.name)}・${esc(x.t)}`).join(' ↔ ')}</small></span><span class="lk">${esc(L.k || '')}</span></button>`; }
+function openLinks(){
+  curLink = null; focusIsl = null; paintLinks();
+  if(ok3d) home();
+  showPanel(`
+    <div class="p-top"><span class="small">${esc(G.title)}</span><button class="x" data-x aria-label="關閉">×</button></div>
+    <h2>相通線</h2>
+    <p class="lead">不同島上的站，常常在說同一件事。這 ${LINKS.length} 條線把它們連起來：先讀一站，再順著線去讀另一站，兩邊對照，會懂得更深。</p>
+    <label class="sw"><input type="checkbox" id="swL" ${showLines ? 'checked' : ''}><span></span>在島嶼上顯示相通線</label>
+    <div class="llist">${LINKS.map(linkCard).join('')}</div>`);
+  panel.querySelector('[data-x]').onclick = closePanel;
+  panel.querySelector('#swL').onchange = e => setLines(e.target.checked);
+  panel.querySelectorAll('[data-lk]').forEach(b => b.onclick = () => openLink(LINKS[+b.dataset.lk - 1]));
+  setHash('L');
+}
+function openLink(L, from){
+  if(!L) return;
+  curLink = L; focusIsl = null; current = null; paintLinks();
+  if(ok3d){ const a = L.s[0], b = L.s[L.s.length-1]; const mx = (a.x + b.x)/2, mz = (a.z + b.z)/2, d = Math.hypot(a.x - b.x, a.z - b.z); flyTo(mx, mz, Math.max(30, d*1.25 + 18), Math.atan2(mz, mx) || Math.PI/2); }
+  const i = LINKS.indexOf(L), prev = LINKS[i-1], next = LINKS[i+1];
+  showPanel(`
+    <div class="p-top"><div class="crumbs"><button data-all>相通線</button><span>· 第 ${L.n} / ${LINKS.length} 條</span></div><button class="x" data-x aria-label="關閉">×</button></div>
+    <p class="ktag" style="--c:${L.col}">${esc(L.k || '相通')}</p>
+    <h2>${esc(L.t)}</h2>
+    <p class="text">${esc(L.why)}</p>
+    <div class="ends">${L.s.map((x, k) => `${k ? `<div class="joint" style="--c:${L.col}"></div>` : ''}<button class="endc" data-st="${x.id}">
+      <span class="ei"><span class="no" style="background:${x.isl.color}">${x.isl.id}</span>${esc(x.isl.name)}・第 ${x.n} 站${read.has(x.id) ? '<em>已讀</em>' : ''}</span>
+      <b>${esc(x.t)}</b>${x.quote && x.quote.length ? `<q>${esc(x.quote[0])}</q>` : ''}<small>${esc(x.point || x.one || '')}</small><span class="go">讀這一站 →</span></button>`).join('')}</div>
+    ${from ? `<button class="btn" data-back>← 回到「${esc(from.t)}」</button>` : ''}
+    <nav class="pnav"><button class="btn" data-pl ${prev ? '' : 'disabled'}>← 上一條</button><button class="btn" data-nl ${next ? '' : 'disabled'}>下一條 →</button></nav>`);
+  panel.querySelector('[data-x]').onclick = () => { curLink = null; paintLinks(); closePanel(); };
+  panel.querySelector('[data-all]').onclick = openLinks;
+  panel.querySelectorAll('[data-st]').forEach(b => b.onclick = () => { curLink = null; paintLinks(); openStation(ALL.find(x => x.id === b.dataset.st)); });
+  const bk = panel.querySelector('[data-back]'); if(bk) bk.onclick = () => { curLink = null; paintLinks(); openStation(from); };
+  const pl = panel.querySelector('[data-pl]'); if(pl && prev) pl.onclick = () => openLink(prev);
+  const nl = panel.querySelector('[data-nl]'); if(nl && next) nl.onclick = () => openLink(next);
+  setHash('L' + L.n);
 }
 
 /* ---------- modal helpers ---------- */
@@ -603,6 +743,57 @@ function renderBook(){
   L.querySelectorAll('details').forEach(d => d.addEventListener('toggle', () => { if(d.open) setHash(d.id); }));
 }
 
+/* ---------- sutra (經文全文) ---------- */
+const CNUM = '一二三四五六七八九十';
+let wCh = 0, wQ = '';
+const wTxt = p => typeof p === 'string' ? p : p.t;
+function sutraKey(q){
+  if(!SUTRA) return '';
+  const all = SUTRA.ch.flatMap(c => c.p.map(wTxt)), has = k => all.some(t => t.includes(k));
+  const parts = String(q).split(/[，。；：、！？「」『』\s]+/).filter(x => x.length >= 4).sort((a, b) => b.length - a.length);
+  for(const p of parts){ if(has(p)) return p; }
+  for(const p of parts){ for(let i = 0; i + 4 <= p.length; i++){ const k = p.slice(i, i + 4); if(has(k)) return k; } }
+  return '';
+}
+function hl(t, q){ if(!q) return esc(t); return t.split(q).map(esc).join(`<mark>${esc(q)}</mark>`); }
+function openSutra(o = {}){
+  wCh = o.ch || 0; wQ = o.q || '';
+  bookEl.hidden = false;
+  bookEl.innerHTML = `<div class="in">
+    <div class="p-top"><span>${esc(SUTRA.title)}・經文全文</span><button class="x" data-close aria-label="關閉">×</button></div>
+    <h3>《${esc(SUTRA.title)}》</h3>
+    <p class="small">${esc(SUTRA.by)}。共十品，可以按品閱讀，或輸入字詞搜尋全文。</p>
+    <input class="search" id="wS" type="search" placeholder="搜尋經文，例如：本來無一物、自性、般若" aria-label="搜尋經文" value="${esc(wQ)}">
+    <div class="chips" id="wC"></div><p class="small" id="wN"></p><div id="wL"></div></div>`;
+  bookEl.querySelector('[data-close]').onclick = () => { bookEl.hidden = true; setHash(''); };
+  bookEl.querySelector('#wS').oninput = e => { wQ = e.target.value.trim(); renderSutra(); };
+  renderSutra();
+  if(o.p){ const el = bookEl.querySelector(`#w${wCh}p${o.p}`); if(el){ el.classList.add('flash'); requestAnimationFrame(() => el.scrollIntoView({ block: 'center' })); } }
+  else bookEl.scrollTop = 0;
+}
+function renderSutra(){
+  const C1 = bookEl.querySelector('#wC');
+  C1.innerHTML = `<button class="chip" aria-pressed="${!wCh}" data-c="0">全部十品</button>` + SUTRA.ch.map(c => `<button class="chip" aria-pressed="${wCh === c.n}" data-c="${c.n}">${c.n}・${esc(c.name)}</button>`).join('');
+  C1.querySelectorAll('[data-c]').forEach(b => b.onclick = () => { wCh = +b.dataset.c; renderSutra(); bookEl.scrollTop = 0; });
+  const chs = SUTRA.ch.filter(c => !wCh || c.n === wCh);
+  const L = bookEl.querySelector('#wL'), N1 = bookEl.querySelector('#wN');
+  const head = c => `<div class="wh"><h4>${esc(c.name)}第${CNUM[c.n-1]}</h4>${c.name !== c.isl ? `<span class="small">本站島名〈${esc(c.isl)}〉</span>` : ''}<button class="chipbtn" data-is="${c.n}">去${esc(c.isl)}島 →</button></div>`;
+  const para = (c, p, i, q) => { const t = wTxt(p); return `<p class="sp${typeof p === 'string' ? '' : ' verse'}" id="w${c.n}p${i+1}">${hl(t, q)}</p>`; };
+  if(wQ){
+    let n = 0;
+    const html = chs.map(c => { const hits = c.p.map((p, i) => [p, i]).filter(([p]) => wTxt(p).includes(wQ)); n += hits.length; if(!hits.length) return '';
+      return `<section class="wsec">${head(c)}${hits.map(([p, i]) => `<div class="whit">${para(c, p, i, wQ)}<button class="chipbtn" data-ctx="${c.n}:${i+1}">看前後文</button></div>`).join('')}</section>`; }).join('');
+    N1.textContent = `「${wQ}」${wCh ? `在第${CNUM[wCh-1]}品` : '在全部十品'}出現在 ${n} 段經文${wCh ? '（按「全部十品」可搜全經）' : ''}`;
+    L.innerHTML = n ? html : '<p class="small">經文裡沒有找到這幾個字，換個字詞試試（例如少打一兩個字）。</p>';
+  } else {
+    N1.textContent = wCh ? `第${CNUM[wCh-1]}品，共 ${chs[0].p.length} 段` : '';
+    L.innerHTML = chs.map(c => `<section class="wsec">${head(c)}${c.p.map((p, i) => para(c, p, i, '')).join('')}</section>`).join('');
+  }
+  L.querySelectorAll('[data-is]').forEach(b => b.onclick = () => { bookEl.hidden = true; openIsland(ISL.find(I => I.id === +b.dataset.is)); });
+  L.querySelectorAll('[data-ctx]').forEach(b => b.onclick = () => { const [c, p] = b.dataset.ctx.split(':').map(Number); openSutra({ ch: c, p }); setHash(`w${c}p${p}`); });
+  setHash(wCh ? 'w'+wCh : 'w');
+}
+
 /* ---------- welcome ---------- */
 function welcome(){
   openModal(`<div class="welcome" style="display:grid;gap:14px;justify-items:start">
@@ -619,6 +810,8 @@ $('#bHome').onclick = () => { closePanel(); closeModal(); if(ok3d) home(); };
 $('#bList').onclick = openList;
 $('#bPass').onclick = openPassport;
 if(BOOK) $('#bBook').onclick = () => openBook();
+if(SUTRA) $('#bSutra').onclick = () => openSutra();
+if(LINKS.length){ $('#bLink').onclick = openLinks; $('#bLink').classList.toggle('on', showLines); }
 document.addEventListener('keydown', e => { if(e.key === 'Escape'){ if(!bookEl.hidden){ bookEl.hidden = true; } else if(!modal.hidden) closeModal(); else if(!panel.hidden) closePanel(); } });
 
 if(ok3d){ init3d(); }
@@ -636,6 +829,8 @@ let m;
 if((m = h.match(/^i(\d+)s(\d+)$/))){ const I = ISL.find(x => x.id === +m[1]); if(I && I.stations[+m[2]-1]) openStation(I.stations[+m[2]-1]); }
 else if((m = h.match(/^i(\d+)$/))){ const I = ISL.find(x => x.id === +m[1]); if(I) openIsland(I); }
 else if(BOOK && (m = h.match(/^b(\d+)$/))){ openBook(+m[1]); }
+else if(LINKS.length && (m = h.match(/^L(\d*)$/))){ if(+m[1]) openLink(LINKS[+m[1]-1]); else openLinks(); }
+else if(SUTRA && (m = h.match(/^w(\d*)(?:p(\d+))?$/))){ openSutra({ ch: +m[1] || 0, p: +m[2] || 0 }); }
 else if(G.legacy && (m = h.match(G.legacy.re))){ const s = G.legacy.map(+m[1]); if(s) openStation(ALL.find(x => x.id === s)); }
 else if(!store.get('welcome', 0)) welcome();
 else if(!ok3d) openList();
