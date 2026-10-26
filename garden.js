@@ -42,12 +42,12 @@ document.body.insertAdjacentHTML('beforeend', `
       <h1>${esc(G.title)}</h1><p class="tag">${esc(G.tagline)}</p></div>
   </header>
   <nav class="tools" aria-label="工具">
-    <button class="tbtn" id="bHome">${ICON.home}<span class="lbl">全景</span></button>
-    <button class="tbtn" id="bList">${ICON.list}<span class="lbl">島嶼清單</span></button>
-    ${BOOK ? `<button class="tbtn" id="bBook">${ICON.book}<span class="lbl">全書</span></button>` : ''}
-    ${SUTRA ? `<button class="tbtn" id="bSutra">${ICON.book}<span class="lbl">經文全文</span></button>` : ''}
-    ${LINKS.length ? `<button class="tbtn" id="bLink">${ICON.link}<span class="lbl">相通線</span><span class="n">${LINKS.length}</span></button>` : ''}
-    <button class="tbtn" id="bPass">${ICON.pass}<span class="lbl">學習護照</span><span class="n" id="passN">0/${N}</span></button>
+    <button class="tbtn" id="bHome" title="全景" aria-label="全景">${ICON.home}<span class="lbl">全景</span></button>
+    <button class="tbtn" id="bList" title="島嶼清單" aria-label="島嶼清單">${ICON.list}<span class="lbl">島嶼清單</span></button>
+    ${BOOK ? `<button class="tbtn" id="bBook" title="全書" aria-label="全書">${ICON.book}<span class="lbl">全書</span></button>` : ''}
+    ${SUTRA ? `<button class="tbtn" id="bSutra" title="經文全文" aria-label="經文全文">${ICON.book}<span class="lbl">經文全文</span></button>` : ''}
+    ${LINKS.length ? `<button class="tbtn" id="bLink" title="相通線" aria-label="相通線">${ICON.link}<span class="lbl">相通線</span><span class="n">${LINKS.length}</span></button>` : ''}
+    <button class="tbtn" id="bPass" title="學習護照" aria-label="學習護照">${ICON.pass}<span class="lbl">學習護照</span><span class="n" id="passN">0/${N}</span></button>
   </nav>
   <div class="timebar" role="group" aria-label="時段">
     <button data-t="dawn">晨光</button><button data-t="noon">午後</button><button data-t="dusk">黃昏</button><button data-t="night">星夜</button>
@@ -263,7 +263,7 @@ function buildLinks(){
       const d = A.distanceTo(B), M = A.clone().lerp(B, .5); M.y += 3 + d*.32;
       const M2 = M.clone(); M2.x *= .92; M2.z *= .92;   // bow slightly toward the plaza
       const curve = new THREE.QuadraticBezierCurve3(A, M2, B);
-      const mat = new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: .7, depthWrite: false });
+      const mat = new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: .5, depthWrite: false });
       const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, 48, .1, 6, false), mat); linkGrp.add(tube); L.parts.push(mat);
       const bead = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex(), color: col, transparent: true, opacity: .95, depthWrite: false }));
       bead.scale.set(1.3, 1.3, 1); bead.userData = { curve, ph: (L.n*.37) % 1 }; linkGrp.add(bead); L.beads.push(bead);
@@ -275,7 +275,7 @@ function buildLinks(){
 function paintLinks(){
   if(!linkGrp) return;
   linkGrp.visible = showLines || !!curLink;
-  LINKS.forEach(L => { const on = !curLink || curLink === L; L.parts.forEach(m => m.opacity = on ? (curLink ? .95 : .7) : .08); L.beads.forEach(b => { b.visible = on; b.scale.setScalar(curLink === L ? 1.8 : 1.3); }); if(L.plate) L.plate.classList.toggle('on', curLink === L); });
+  LINKS.forEach(L => { const on = !curLink || curLink === L; L.parts.forEach(m => m.opacity = on ? (curLink ? .95 : .5) : .08); L.beads.forEach(b => { b.visible = on; b.scale.setScalar(curLink === L ? 1.8 : 1.3); }); if(L.plate) L.plate.classList.toggle('on', curLink === L); });
 }
 function stepLinks(now){
   if(!linkGrp || !linkGrp.visible) return;
@@ -289,7 +289,7 @@ function buildSky(){
   for(let i=0;i<9;i++){
     const g = new THREE.Group(), n = 3 + Math.floor(r()*3);
     for(let k=0;k<n;k++){ const p = new THREE.Mesh(new THREE.IcosahedronGeometry(1.6 + r()*1.4, 1), cm); p.position.set(k*2.1 - n, r()*.8, (r()-.5)*1.6); p.scale.y = .6; g.add(p); }
-    const a = r()*Math.PI*2, rr = D*.6 + r()*D*1.4; g.position.set(Math.cos(a)*rr, 26 + r()*14, Math.sin(a)*rr); g.userData = { a, rr, sp: .006 + r()*.01 };
+    const a = r()*Math.PI*2, rr = D*1.5 + r()*D*1.6; g.position.set(Math.cos(a)*rr, 48 + r()*16, Math.sin(a)*rr); g.userData = { a, rr, sp: .006 + r()*.01 };
     scene.add(g); SKY.clouds.push(g);
   }
   for(let i=0;i<4;i++){
