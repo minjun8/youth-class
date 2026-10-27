@@ -706,6 +706,7 @@ function openStation(s){
     ${s.quote && s.quote.length ? `<blockquote class="quote">${s.quote.map(l => `<span>${esc(l)}</span>`).join('')}<small>${src}</small></blockquote>` : ''}
     ${s.point ? `<div class="box"><h4>這一站在說</h4><p>${esc(s.point)}</p></div>` : ''}
     <div class="box ask"><h4>想一想</h4><p>${esc(s.ask)}</p></div>
+    <div class="mc" data-mc></div>
     ${s.xyNote ? `<p class="small">${esc(s.xyNote)}</p>` : ''}
     ${s.links.length ? `<div class="rel"><h4>${ICON.link}相通線・和這一站相關</h4>${s.links.map(L => { const o = L.s.filter(x => x !== s); return `<button class="relb" data-lk="${L.n}"><span class="ln" style="background:${L.col || '#999'}">${L.n}</span><span><b>${esc(L.t)}</b><small>${o.map(x => `${esc(x.isl.name)}・${esc(x.t)}`).join('、')}</small></span></button>`; }).join('')}</div>` : ''}
     ${links.length ? `<div class="links">${links.join('')}</div>` : ''}
@@ -716,6 +717,7 @@ function openStation(s){
   panel.querySelector('[data-x]').onclick = closePanel;
   const pv = panel.querySelector('[data-prev]'); if(pv) pv.onclick = () => { if(s.n > 1) openStation(I.stations[s.n-2]); };
   const nx = panel.querySelector('[data-next]'); if(nx) nx.onclick = () => openStation(I.stations[s.n]);
+  mcMount(s, panel.querySelector('[data-mc]'));
   qaMount(s, panel.querySelector('[data-qa]'));
   panel.querySelectorAll('[data-book]').forEach(b => b.onclick = () => openBook(+b.dataset.book));
   panel.querySelectorAll('[data-wc]').forEach(b => b.onclick = () => openSutra({ ch: +b.dataset.wc }));
@@ -948,6 +950,44 @@ function welcome(){
   modal.querySelector('[data-go]').onclick = () => { store.set('welcome', 1); closeModal(); };
 }
 
+/* ---------- station mini challenge: one of six, picked at random ---------- */
+let mcOk = new Set(store.get('mc', []));
+function mcMount(s, box, avoid){
+  if(!box) return;
+  const list = (s.mc || []).filter(q => q && q.q && q.opts && q.opts.length >= 2);
+  if(!list.length){ box.remove(); return; }
+  let pool = list.map((q, i) => i).filter(i => i !== avoid); if(!pool.length) pool = [0];
+  const qi = pool[Math.floor(Math.random()*pool.length)], q = list[qi];
+  const order = q.opts.map((t, i) => i).sort(() => Math.random() - .5);
+  box.innerHTML = `<div class="mch"><h4>小挑戰</h4><small>${mcOk.has(s.id) ? '這一站已經答對過 ✓' : '讀完了，試試看這一題'}</small></div>
+    <p class="mcq">${esc(q.q)}</p>
+    <div class="mco">${order.map(i => `<button class="mcb" data-i="${i}">${esc(q.opts[i])}</button>`).join('')}</div>
+    <div class="mcr" aria-live="polite"></div>`;
+  box.querySelectorAll('.mcb').forEach(b => b.onclick = () => {
+    const pick = +b.dataset.i, right = pick === (q.a || 0);
+    box.querySelectorAll('.mcb').forEach(x => { x.disabled = true; const i = +x.dataset.i; if(i === (q.a || 0)) x.classList.add('ok'); else if(x === b) x.classList.add('no'); });
+    if(right && !mcOk.has(s.id)){ mcOk.add(s.id); store.set('mc', [...mcOk]); }
+    box.querySelector('.mcr').innerHTML = `<p class="${right ? 'good' : 'bad'}"><b>${right ? '答對了！' : '再想想看。'}</b>${right ? '' : `正確答案是「${esc(q.opts[q.a || 0])}」。`}</p>
+      ${q.why ? `<p class="why">${esc(q.why)}</p>` : ''}${list.length > 1 ? '<button class="linkbtn" data-again>換一題</button>' : ''}`;
+    const ag = box.querySelector('[data-again]'); if(ag) ag.onclick = () => mcMount(s, box, qi);
+  });
+}
+
+/* ---------- content edits saved by the admin page ---------- */
+const BASE = new Map();
+ALL.forEach(s => BASE.set(s.id, { t: s.t, meta: s.meta, one: s.one, text: s.text, quote: s.quote, point: s.point, ask: s.ask, mc: s.mc }));
+function applyEdits(ed){
+  ALL.forEach(s => {
+    Object.assign(s, BASE.get(s.id));
+    const e = ed && ed[s.id]; if(!e) return;
+    ['t','meta','one','text','point','ask'].forEach(k => { if(typeof e[k] === 'string') s[k] = e[k]; });
+    if(Array.isArray(e.quote)) s.quote = e.quote;
+    if(Array.isArray(e.mc) && e.mc.length) s.mc = e.mc;
+    if(s.pinEl) s.pinEl.title = s.fac ? `${s.fac}・${s.t}` : s.t;
+  });
+}
+(function(){ try{ const c = JSON.parse(localStorage.getItem('yc-edits-' + G.key) || 'null'); if(c) applyEdits(c); }catch(e){} })();
+
 /* ---------- together: presence + questions & answers (Google Sheet via Apps Script) ---------- */
 const API = (window.YC_API || '').trim();
 const myId = (() => { try{ let v = localStorage.getItem('yc-id'); if(!v){ v = Math.random().toString(36).slice(2, 10); localStorage.setItem('yc-id', v); } return v; }catch(e){ return Math.random().toString(36).slice(2, 10); } })();
@@ -1115,6 +1155,7 @@ else if(!ok3d) openList();
 // together
 if(who) saveWho(who);
 if(API){
+  api('edits').then(j => { const nj = JSON.stringify(j.edits || {}); let old = null; try{ old = localStorage.getItem('yc-edits-' + G.key); localStorage.setItem('yc-edits-' + G.key, nj); }catch(e){} if(old === nj) return; applyEdits(j.edits || {}); if(current && !panel.hidden) openStation(current.s); }).catch(() => {});
   presence(); setInterval(() => presence(), 3000);
   api('recent').then(j => setUnans(j.qs.filter(q => !q.na).length)).catch(() => {});
   if(!who) setTimeout(() => { if(!who && modal.hidden) askName(() => presence()); }, 5000);

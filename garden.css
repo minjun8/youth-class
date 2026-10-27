@@ -269,3 +269,20 @@ a{color:inherit}
 .modal.narrow{max-width:420px}
 @media (max-width:760px){.tools{flex-wrap:wrap;justify-content:flex-end;left:auto;max-width:calc(100vw - 24px)}.tools .tbtn{padding:8px 10px}}
 @media (max-width:1100px){.hint{display:none}}
+
+/* ---------- station mini challenge ---------- */
+.mc{margin-top:16px;border:1.5px solid var(--accent);border-radius:14px;padding:12px 14px;background:#fffdf7}
+.mch{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.mch h4{margin:0;font-size:13px;letter-spacing:.16em;color:var(--accent)}
+.mch small{color:var(--muted);font-size:12px}
+.mcq{margin:6px 0 10px;font-weight:600}
+.mco{display:grid;gap:8px}
+.mcb{text-align:left;border:1px solid var(--line);background:#fff;border-radius:10px;padding:9px 12px;font-size:15px;line-height:1.5}
+.mcb:not(:disabled):hover{border-color:var(--accent);background:var(--paper-2)}
+.mcb:disabled{cursor:default;opacity:.75}
+.mcb.ok{border-color:var(--ok);background:#e8f4ec;opacity:1}
+.mcb.no{border-color:var(--bad);background:#fbeae7;opacity:1}
+.mcr p{margin:10px 0 0}
+.mcr .good b{color:var(--ok)}.mcr .bad b{color:var(--bad)}
+.mcr .bad b{margin-right:4px}
+.mcr .why{color:var(--muted);font-size:14px}

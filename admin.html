@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>心海群島・內容管理</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@400;700&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+<style>
+:root{--ink:#2b3a36;--muted:#5d6b66;--paper:#fffbf2;--paper-2:#f6efe0;--line:#e3d8c2;--accent:#b5651d;--ok:#3f8f5a;--bad:#b9483a;
+  --f-display:"LXGW WenKai TC","Kaiti TC","STKaiti","BiauKai",serif;--f-body:"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;color-scheme:light}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--paper-2);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.6}
+button,input,textarea,select{font:inherit;color:inherit}
+button{cursor:pointer}
+[hidden]{display:none!important}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+header{display:flex;align-items:center;gap:12px;height:64px;padding:0 20px;background:var(--paper);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+header h1{margin:0;font-family:var(--f-display);font-size:22px;letter-spacing:.06em}
+header .sp{flex:1}
+header small{color:var(--muted)}
+.btn{border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px 16px}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.primary:disabled{opacity:.5;cursor:default}
+.btn.warn{color:var(--bad)}
+/* login */
+.login{max-width:380px;margin:12vh auto 0;background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:28px}
+.login h2{margin:0 0 4px;font-family:var(--f-display);font-size:24px}
+.login p{margin:0 0 18px;color:var(--muted);font-size:14px}
+label.f{display:grid;gap:4px;margin:0 0 14px}
+label.f>span{font-size:13px;color:var(--muted)}
+input[type=text],input[type=password],textarea{width:100%;border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:#fff;font-size:15px}
+textarea{resize:vertical;line-height:1.6}
+.err{color:var(--bad);font-size:14px;min-height:1.4em;margin:0 0 8px}
+/* app */
+.app{display:grid;grid-template-columns:300px 1fr;min-height:calc(100vh - 64px)}
+nav.side{border-right:1px solid var(--line);background:var(--paper);overflow-y:auto;max-height:calc(100vh - 64px);position:sticky;top:64px}
+.tabs{display:flex;gap:4px;padding:12px;border-bottom:1px solid var(--line)}
+.tabs button{flex:1;border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px}
+.tabs button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.isl{padding:8px 12px 4px;font-weight:700;font-size:14px;display:flex;align-items:center;gap:6px}
+.isl i{width:10px;height:10px;border-radius:50%;display:inline-block}
+.st{display:flex;align-items:center;gap:8px;width:100%;text-align:left;border:0;background:none;padding:6px 12px 6px 28px;font-size:14px}
+.st:hover{background:var(--paper-2)}
+.st.on{background:#f3e3cf;font-weight:600}
+.st .n{color:var(--muted);font-variant-numeric:tabular-nums;font-size:12px;min-width:2.4em}
+.st .dot{margin-left:auto;font-size:11px;color:#fff;background:var(--accent);border-radius:999px;padding:0 7px}
+main{padding:20px 28px 80px;max-width:900px}
+.empty{color:var(--muted);margin-top:20vh;text-align:center}
+.top{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:16px}
+.top h2{margin:0;font-family:var(--f-display);font-size:24px;flex:1;min-width:200px}
+.tag{font-size:12px;border-radius:999px;padding:2px 10px;background:var(--paper);border:1px solid var(--line);color:var(--muted)}
+.tag.ed{background:var(--accent);border-color:var(--accent);color:#fff}
+fieldset{border:1px solid var(--line);border-radius:14px;background:var(--paper);padding:14px 16px;margin:0 0 16px}
+legend{font-weight:700;padding:0 6px}
+.hint{font-size:12px;color:var(--muted);margin:-8px 0 12px}
+.hint.warn{color:var(--bad)}
+.q{border-top:1px dashed var(--line);padding-top:12px;margin-top:12px}
+.q:first-of-type{border-top:0;margin-top:0;padding-top:0}
+.qh{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-weight:600;font-size:14px}
+.opt{display:grid;grid-template-columns:auto 1fr;gap:8px;align-items:center;margin-bottom:6px}
+.opt input[type=radio]{width:18px;height:18px;accent-color:var(--ok)}
+.bar{position:sticky;bottom:0;display:flex;flex-wrap:wrap;gap:10px;align-items:center;background:rgba(246,239,224,.95);padding:12px 0;border-top:1px solid var(--line)}
+.bar .msg{font-size:14px;color:var(--muted);flex:1;min-width:160px}
+.bar .msg.ok{color:var(--ok)}.bar .msg.bad{color:var(--bad)}
+.menu{display:none}
+@media (max-width:820px){
+  .app{grid-template-columns:1fr}
+  nav.side{position:static;max-height:none;border-right:0;border-bottom:1px solid var(--line)}
+  nav.side.closed .list{display:none}
+  .menu{display:inline-block}
+  main{padding:16px}
+  header{padding:0 14px}
+  header h1{font-size:17px;white-space:nowrap}
+  header small{display:none}
+  header .btn{padding:5px 12px;white-space:nowrap}
+}
+</style>
+<script src="config.js"></script>
+</head>
+<body>
+<header><h1>心海群島・內容管理</h1><span class="sp"></span><small id="who"></small><button class="btn" id="out" hidden>登出</button></header>
+
+<section class="login" id="login" hidden>
+  <h2>管理登入</h2>
+  <p>登入後可以修改每一站的內容和小挑戰題目。修改會存在試算表，網站會自動套用。</p>
+  <form id="lf">
+    <label class="f"><span>帳號</span><input type="text" id="lu" autocomplete="username" required></label>
+    <label class="f"><span>密碼</span><input type="password" id="lp" autocomplete="current-password" required></label>
+    <p class="err" id="le" role="alert"></p>
+    <button class="btn primary" style="width:100%">登入</button>
+  </form>
+</section>
+
+<div class="app" id="app" hidden>
+  <nav class="side closed" id="side">
+    <div class="tabs"><button data-k="lz" class="on">曹溪群島</button><button data-k="jy">解疑群島</button></div>
+    <div style="padding:8px 12px 0"><button class="btn menu" id="tog">顯示站點清單</button></div>
+    <div class="list" id="list"></div>
+  </nav>
+  <main id="main"><p class="empty">從左邊選一站開始編修。</p></main>
+</div>
+
+<script>
+(function(){
+const API = (window.YC_API || '').trim();
+const $ = s => document.querySelector(s);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let token = sessionStorage.getItem('yc-admin') || '', site = 'lz', cur = null, dirty = false;
+const D = {}, E = { lz: {}, jy: {} };
+
+async function api(op, data = {}){
+  const r = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(Object.assign({ op, site, token }, data)) });
+  const j = await r.json(); if(!j.ok) throw new Error(j.err || '發生錯誤'); return j;
+}
+async function loadData(k, file){
+  const txt = await fetch(file, { cache: 'no-cache' }).then(r => r.text());
+  const w = {}; new Function('window', 'localStorage', txt)(w, null);
+  const G = w.GARDEN; G.islands.forEach(I => I.stations.forEach((s, i) => { s.id = I.id + '-' + (i + 1); s.isl = I; }));
+  D[k] = G;
+}
+function showLogin(msg){ $('#login').hidden = false; $('#app').hidden = true; $('#out').hidden = true; $('#who').textContent = ''; $('#le').textContent = msg || ''; $('#lu').focus(); }
+async function enter(user){
+  $('#login').hidden = true; $('#app').hidden = false; $('#out').hidden = false; $('#who').textContent = '已登入：' + user;
+  if(!D.lz){ await Promise.all([loadData('lz', 'liuzu-data.js'), loadData('jy', 'jieyi-data.js')]); }
+  await reloadEdits(); drawList();
+}
+async function reloadEdits(){
+  for(const k of ['lz', 'jy']){ const j = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ op: 'edits', site: k }) }).then(r => r.json()); E[k] = j.edits || {}; }
+}
+function drawList(){
+  const G = D[site];
+  $('#list').innerHTML = G.islands.map(I => `<div class="isl"><i style="background:${esc(I.color)}"></i>${esc(I.name)}</div>` +
+    I.stations.map(s => { const e = E[site][s.id], t = (e && e.t) || s.t;
+      return `<button class="st${cur && cur.id === s.id && cur.site === site ? ' on' : ''}" data-id="${s.id}"><span class="n">${s.id}</span><span>${esc(t)}</span>${e ? '<span class="dot">已修改</span>' : ''}</button>`; }).join('')).join('');
+  $('#list').querySelectorAll('[data-id]').forEach(b => b.onclick = () => pick(b.dataset.id));
+  document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('on', b.dataset.k === site));
+}
+function station(id){ for(const I of D[site].islands) for(const s of I.stations) if(s.id === id) return s; }
+function merged(s){
+  const e = E[site][s.id] || {};
+  return { t: e.t ?? s.t ?? '', meta: e.meta ?? s.meta ?? '', one: e.one ?? s.one ?? '', text: e.text ?? s.text ?? '', quote: e.quote ?? s.quote ?? [], point: e.point ?? s.point ?? '', ask: e.ask ?? s.ask ?? '', mc: (e.mc && e.mc.length ? e.mc : s.mc) || [] };
+}
+function pick(id){
+  if(dirty && !confirm('這一站還有沒儲存的修改，要放棄嗎？')) return;
+  const s = station(id); cur = { site, id, s }; dirty = false; drawList(); render();
+  $('#side').classList.add('closed'); $('#tog').textContent = '顯示站點清單';
+  window.scrollTo(0, 0);
+}
+const fld = (k, label, val, rows, extra='') => rows
+  ? `<label class="f"><span>${label}</span><textarea data-k="${k}" rows="${rows}">${esc(val)}</textarea></label>${extra}`
+  : `<label class="f"><span>${label}</span><input type="text" data-k="${k}" value="${esc(val)}"></label>${extra}`;
+function render(){
+  const s = cur.s, m = merged(s), ed = !!E[site][s.id];
+  const mc = m.mc.slice(0, 6); while(mc.length < 6) mc.push({ q: '', opts: ['', '', '', ''], a: 0, why: '' });
+  const page = site === 'lz' ? 'liuzu.html' : 'jieyi.html', [iid, sn] = s.id.split('-');
+  $('#main').innerHTML = `
+    <div class="top"><h2>${esc(s.isl.name)}・第 ${sn} 站</h2><span class="tag${ed ? ' ed' : ''}">${ed ? '已修改' : '原始內容'}</span>
+      <a class="btn" href="${page}#i${iid}s${sn}" target="_blank" rel="noopener">在網站上查看</a></div>
+    <fieldset><legend>內容</legend>
+      ${fld('t', '標題', m.t)}
+      ${fld('meta', '小字說明（標題下方）', m.meta)}
+      ${fld('one', '一句話重點', m.one, 2)}
+      ${fld('text', '內容', m.text, 8)}
+      ${fld('quote', '原文引文（一行一句）', (m.quote || []).join('\n'), 4, '<p class="hint warn">這是經書原文，修改前請再三確認與原典一致。</p>')}
+      ${fld('point', '這一站在說', m.point, 2)}
+      ${fld('ask', '想一想', m.ask, 2)}
+    </fieldset>
+    <fieldset><legend>小挑戰（6 題，讀完後隨機抽一題）</legend>
+      <p class="hint">每題四個選項，點左邊圓圈設定正確答案；網站上選項會打亂順序顯示。題目留白的不會出現。</p>
+      ${mc.map((q, i) => `<div class="q" data-q="${i}"><div class="qh">第 ${i + 1} 題</div>
+        <label class="f"><span>題目</span><input type="text" data-f="q" value="${esc(q.q)}"></label>
+        ${[0,1,2,3].map(j => `<div class="opt"><input type="radio" name="a${i}" value="${j}" ${(+q.a || 0) === j ? 'checked' : ''} aria-label="設第 ${j + 1} 個選項為正確答案"><input type="text" data-o="${j}" value="${esc((q.opts || [])[j] || '')}" placeholder="選項 ${j + 1}"></div>`).join('')}
+        <label class="f"><span>答完後的說明</span><input type="text" data-f="why" value="${esc(q.why)}"></label></div>`).join('')}
+    </fieldset>
+    <div class="bar"><button class="btn primary" id="save">儲存</button>${ed ? '<button class="btn warn" id="reset">還原為原始內容</button>' : ''}<span class="msg" id="msg">${ed ? '這一站目前顯示的是修改後的內容。' : ''}</span></div>`;
+  $('#main').querySelectorAll('input,textarea').forEach(x => x.addEventListener('input', () => { dirty = true; $('#msg').className = 'msg'; $('#msg').textContent = '有尚未儲存的修改'; }));
+  $('#save').onclick = save;
+  const rs = $('#reset'); if(rs) rs.onclick = reset;
+}
+function collect(){
+  const g = k => { const el = $('#main').querySelector(`[data-k="${k}"]`); return el ? el.value.trim() : ''; };
+  const o = { t: g('t'), meta: g('meta'), one: g('one'), text: g('text'), quote: g('quote').split('\n').map(x => x.trim()).filter(Boolean), point: g('point'), ask: g('ask') };
+  o.mc = [...$('#main').querySelectorAll('[data-q]')].map(b => {
+    const i = b.dataset.q, a = +(b.querySelector(`input[name=a${i}]:checked`) || { value: 0 }).value;
+    return { q: b.querySelector('[data-f=q]').value.trim(), opts: [0,1,2,3].map(j => b.querySelector(`[data-o="${j}"]`).value.trim()), a, why: b.querySelector('[data-f=why]').value.trim() };
+  }).filter(q => q.q);
+  return o;
+}
+function diff(s, o){
+  const base = { t: s.t || '', meta: s.meta || '', one: s.one || '', text: s.text || '', quote: s.quote || [], point: s.point || '', ask: s.ask || '', mc: s.mc || [] };
+  const out = {};
+  for(const k of Object.keys(o)) if(JSON.stringify(o[k]) !== JSON.stringify(base[k])) out[k] = o[k];
+  return out;
+}
+function check(o){
+  if(!o.t) return '標題不能空白。';
+  for(const [i, q] of o.mc.entries()){
+    if(q.opts.filter(Boolean).length < 2) return `小挑戰第 ${i + 1} 題至少要有兩個選項。`;
+    if(!q.opts[q.a]) return `小挑戰第 ${i + 1} 題：被設為正確答案的選項是空白的。`;
+  }
+  return '';
+}
+async function save(){
+  const o = collect(), bad = check(o), msg = $('#msg');
+  if(bad){ msg.className = 'msg bad'; msg.textContent = bad; return; }
+  o.mc = o.mc.map(q => { const keep = q.opts.map((t, j) => [t, j]).filter(x => x[0]); return { q: q.q, opts: keep.map(x => x[0]), a: keep.findIndex(x => x[1] === q.a), why: q.why }; });
+  const d = diff(cur.s, o), btn = $('#save');
+  btn.disabled = true; msg.className = 'msg'; msg.textContent = '儲存中…';
+  try{
+    if(!Object.keys(d).length){ if(E[site][cur.id]) await api('reset', { sid: cur.id }); delete E[site][cur.id]; }
+    else { await api('save', { sid: cur.id, data: d }); E[site][cur.id] = d; }
+    dirty = false; drawList(); render(); $('#msg').className = 'msg ok'; $('#msg').textContent = Object.keys(d).length ? '已儲存。網站重新整理後就會看到新內容。' : '內容和原始版本相同，已維持原始內容。';
+  }catch(e){ btn.disabled = false; if(/登入/.test(e.message)){ sessionStorage.removeItem('yc-admin'); token = ''; showLogin('登入已逾時，請重新登入。'); return; } msg.className = 'msg bad'; msg.textContent = '儲存失敗：' + e.message; }
+}
+async function reset(){
+  if(!confirm('確定要把這一站還原成原始內容嗎？')) return;
+  try{ await api('reset', { sid: cur.id }); delete E[site][cur.id]; dirty = false; drawList(); render(); $('#msg').className = 'msg ok'; $('#msg').textContent = '已還原為原始內容。'; }
+  catch(e){ $('#msg').className = 'msg bad'; $('#msg').textContent = '還原失敗：' + e.message; }
+}
+document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => { if(b.dataset.k === site) return; if(dirty && !confirm('這一站還有沒儲存的修改，要放棄嗎？')) return; dirty = false; site = b.dataset.k; cur = null; $('#main').innerHTML = '<p class="empty">從左邊選一站開始編修。</p>'; drawList(); });
+$('#tog').onclick = () => { const s = $('#side'); s.classList.toggle('closed'); $('#tog').textContent = s.classList.contains('closed') ? '顯示站點清單' : '收起站點清單'; };
+$('#lf').onsubmit = async e => {
+  e.preventDefault(); $('#le').textContent = '';
+  try{ const j = await api('login', { user: $('#lu').value.trim(), pass: $('#lp').value }); token = j.token; sessionStorage.setItem('yc-admin', token); $('#lp').value = ''; enter(j.user); }
+  catch(err){ $('#le').textContent = err.message; }
+};
+$('#out').onclick = () => { if(dirty && !confirm('還有沒儲存的修改，確定要登出嗎？')) return; sessionStorage.removeItem('yc-admin'); token = ''; dirty = false; cur = null; showLogin(); };
+addEventListener('beforeunload', e => { if(dirty){ e.preventDefault(); e.returnValue = ''; } });
+
+if(!API){ document.body.insertAdjacentHTML('beforeend', '<p class="empty">尚未設定試算表連線（config.js）。</p>'); return; }
+if(token) api('check').then(j => enter(j.user)).catch(() => { sessionStorage.removeItem('yc-admin'); token = ''; showLogin(); });
+else showLogin();
+})();
+</script>
+</body>
+</html>

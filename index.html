@@ -74,6 +74,9 @@ a:focus-visible{outline:2px solid var(--fg);outline-offset:3px}
 
 footer{padding-block:20px 40px;font-size:12px;color:var(--muted)}
 footer p{margin:0;max-width:72ch}
+footer{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:flex-end;justify-content:space-between}
+.admin-btn{flex:none;display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border:1px solid currentColor;border-radius:999px;color:var(--muted);text-decoration:none;font-size:13px}
+.admin-btn:hover{color:var(--fg)}
 @media (prefers-reduced-motion:reduce){.portal{transition:none}.portal:hover{transform:none}}
 </style>
 </head>
@@ -117,7 +120,7 @@ footer p{margin:0;max-width:72ch}
     </ol>
   </section>
 
-  <footer><p>曹溪群島經文依宗寶本《六祖大師法寶壇經》；解疑群島題目與原文摘句出自《一貫道疑問解答》（民國二十六年）。白話內容為導讀改寫，有疑問請以原典與前賢說明為準。閱讀進度只存在你自己的瀏覽器裡。</p></footer>
+  <footer><p>曹溪群島經文依宗寶本《六祖大師法寶壇經》；解疑群島題目與原文摘句出自《一貫道疑問解答》（民國二十六年）。白話內容為導讀改寫，有疑問請以原典與前賢說明為準。閱讀進度只存在你自己的瀏覽器裡。</p><a class="admin-btn" href="admin.html">🔒 管理者登入</a></footer>
 </div>
 
 <script>
