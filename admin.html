@@ -68,6 +68,21 @@ legend{font-weight:700;padding:0 6px}
 .bar .msg{font-size:14px;color:var(--muted);flex:1;min-width:160px}
 .bar .msg.ok{color:var(--ok)}.bar .msg.bad{color:var(--bad)}
 .menu{display:none}
+.acct{max-width:760px}
+.acct table{width:100%;border-collapse:collapse;font-size:14px}
+.acct th,.acct td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);vertical-align:middle}
+.acct th{color:var(--muted);font-weight:500;font-size:13px}
+.acct td.act{text-align:right;white-space:nowrap}
+.acct td.act .btn{padding:4px 12px;font-size:13px}
+.role{font-size:12px;border-radius:999px;padding:1px 9px;border:1px solid var(--line);background:#fff}
+.role.owner{background:var(--ink);color:#fff;border-color:var(--ink)}
+.role.admin{background:var(--accent);color:#fff;border-color:var(--accent)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+@media (max-width:600px){.grid2{grid-template-columns:1fr}}
+select{border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:#fff;width:100%}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.row .msg{font-size:14px;color:var(--muted)}.row .msg.ok{color:var(--ok)}.row .msg.bad{color:var(--bad)}
+@media (max-width:600px){header{gap:6px}header h1{font-size:15px}header .btn{padding:4px 9px;font-size:13px}.acct td.act .btn{margin-top:4px}}
 @media (max-width:820px){
   .app{grid-template-columns:1fr}
   nav.side{position:static;max-height:none;border-right:0;border-bottom:1px solid var(--line)}
@@ -83,7 +98,7 @@ legend{font-weight:700;padding:0 6px}
 <script src="config.js"></script>
 </head>
 <body>
-<header><h1>心海群島・內容管理</h1><span class="sp"></span><small id="who"></small><button class="btn" id="out" hidden>登出</button></header>
+<header><h1>心海群島・內容管理</h1><span class="sp"></span><small id="who"></small><button class="btn" id="acct" hidden>帳號管理</button><button class="btn" id="mypw" hidden>改密碼</button><button class="btn" id="out" hidden>登出</button></header>
 
 <section class="login" id="login" hidden>
   <h2>管理登入</h2>
@@ -110,7 +125,8 @@ legend{font-weight:700;padding:0 6px}
 const API = (window.YC_API || '').trim();
 const $ = s => document.querySelector(s);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let token = sessionStorage.getItem('yc-admin') || '', site = 'lz', cur = null, dirty = false;
+let token = sessionStorage.getItem('yc-admin') || '', site = 'lz', cur = null, dirty = false, me = { user: '', role: '' };
+const ROLE = { owner: '總管理者', admin: '管理者', editor: '編輯者' };
 const D = {}, E = { lz: {}, jy: {} };
 
 async function api(op, data = {}){
@@ -123,9 +139,11 @@ async function loadData(k, file){
   const G = w.GARDEN; G.islands.forEach(I => I.stations.forEach((s, i) => { s.id = I.id + '-' + (i + 1); s.isl = I; }));
   D[k] = G;
 }
-function showLogin(msg){ $('#login').hidden = false; $('#app').hidden = true; $('#out').hidden = true; $('#who').textContent = ''; $('#le').textContent = msg || ''; $('#lu').focus(); }
-async function enter(user){
-  $('#login').hidden = true; $('#app').hidden = false; $('#out').hidden = false; $('#who').textContent = '已登入：' + user;
+function showLogin(msg){ $('#login').hidden = false; $('#app').hidden = true; $('#out').hidden = true; $('#acct').hidden = true; $('#mypw').hidden = true; $('#who').textContent = ''; $('#le').textContent = msg || ''; $('#lu').focus(); }
+async function enter(j){
+  me = { user: j.user, role: j.role || 'owner' };
+  $('#login').hidden = true; $('#app').hidden = false; $('#out').hidden = false; $('#who').textContent = me.user + '（' + ROLE[me.role] + '）';
+  $('#acct').hidden = !(me.role === 'owner' || me.role === 'admin'); $('#mypw').hidden = me.role === 'owner';
   if(!D.lz){ await Promise.all([loadData('lz', 'liuzu-data.js'), loadData('jy', 'jieyi-data.js')]); }
   await reloadEdits(); drawList();
 }
@@ -182,6 +200,88 @@ function render(){
   $('#save').onclick = save;
   const rs = $('#reset'); if(rs) rs.onclick = reset;
 }
+/* ---------- accounts ---------- */
+function relogin(e){ if(/登入/.test(e.message)){ sessionStorage.removeItem('yc-admin'); token = ''; showLogin('登入已逾時，請重新登入。'); return true; } return false; }
+function leave(){ if(dirty && !confirm('這一站還有沒儲存的修改，要放棄嗎？')) return false; dirty = false; cur = null; drawList(); return true; }
+async function openAcct(){
+  if(!leave()) return;
+  $('#main').innerHTML = '<div class="acct"><p class="empty" style="margin-top:10vh">讀取帳號中…</p></div>';
+  try{ drawAcct(await api('users')); }catch(e){ if(!relogin(e)) $('#main').innerHTML = `<p class="empty">${esc(e.message)}</p>`; }
+}
+const day = t => t ? new Date(t).toLocaleDateString('zh-TW') : '';
+function drawAcct(j){
+  const own = j.owner ? `<tr><td><b>${esc(j.owner)}</b></td><td><span class="role owner">總管理者</span></td><td style="color:var(--muted);font-size:13px">在 Apps Script 指令碼屬性設定</td><td></td></tr>` : '';
+  $('#main').innerHTML = `<div class="acct">
+    <div class="top"><h2>帳號管理</h2></div>
+    <fieldset><legend>新增編修帳號</legend>
+      <form id="nf"><div class="grid2">
+        <label class="f"><span>帳號（英文字母或數字，3～20 字）</span><input type="text" id="nu" autocomplete="off" required pattern="[A-Za-z0-9_.\\-]{3,20}"></label>
+        <label class="f"><span>權限</span><select id="nr"><option value="editor">編輯者：只能編修各站內容</option><option value="admin">管理者：可編修內容，也能管理帳號</option></select></label>
+        <label class="f"><span>密碼（至少 8 個字）</span><input type="password" id="np" autocomplete="new-password" required minlength="8"></label>
+        <label class="f"><span>再輸入一次密碼</span><input type="password" id="np2" autocomplete="new-password" required minlength="8"></label>
+      </div><div class="row"><button class="btn primary">新增帳號</button><span class="msg" id="nm"></span></div></form>
+    </fieldset>
+    <fieldset><legend>目前的帳號</legend>
+      <table><thead><tr><th>帳號</th><th>權限</th><th>最後更新</th><th></th></tr></thead><tbody>${own}
+      ${j.users.map(u => `<tr data-u="${esc(u.user)}"><td>${esc(u.user)}${u.user.toLowerCase() === me.user.toLowerCase() ? '（你）' : ''}</td><td><span class="role ${u.role}">${ROLE[u.role]}</span></td><td style="color:var(--muted);font-size:13px">${day(u.updated)}${u.by ? '・' + esc(u.by) : ''}</td>
+        <td class="act"><button class="btn" data-a="edit">改密碼／權限</button>${u.user.toLowerCase() === me.user.toLowerCase() ? '' : ' <button class="btn warn" data-a="del">刪除</button>'}</td></tr>`).join('')}
+      </tbody></table>
+      ${j.users.length ? '' : '<p class="hint" style="margin:12px 0 0">還沒有其他帳號。</p>'}
+    </fieldset>
+    <div id="ed"></div></div>`;
+  const nm = $('#nm');
+  $('#nf').onsubmit = async e => {
+    e.preventDefault(); nm.className = 'msg';
+    if($('#np').value !== $('#np2').value){ nm.className = 'msg bad'; nm.textContent = '兩次輸入的密碼不一樣。'; return; }
+    nm.textContent = '新增中…';
+    try{ const u = $('#nu').value.trim(); drawAcct(await api('userSave', { user: u, pass: $('#np').value, role: $('#nr').value, isNew: true })); $('#nm').className = 'msg ok'; $('#nm').textContent = `已新增「${u}」。請把帳號密碼私下交給對方。`; }
+    catch(err){ if(!relogin(err)){ nm.className = 'msg bad'; nm.textContent = err.message; } }
+  };
+  $('#main').querySelectorAll('tr[data-u] [data-a]').forEach(b => b.onclick = () => {
+    const u = j.users.find(x => x.user === b.closest('tr').dataset.u);
+    if(b.dataset.a === 'del') return delUser(u);
+    editUser(u);
+  });
+}
+async function delUser(u){
+  if(!confirm(`確定要刪除帳號「${u.user}」嗎？刪除後對方就不能再登入。`)) return;
+  try{ drawAcct(await api('userDel', { user: u.user })); }catch(e){ if(!relogin(e)) alert(e.message); }
+}
+function editUser(u){
+  const self = u.user.toLowerCase() === me.user.toLowerCase();
+  $('#ed').innerHTML = `<fieldset><legend>修改「${esc(u.user)}」</legend><form id="ef"><div class="grid2">
+    <label class="f"><span>權限</span><select id="er" ${self ? 'disabled' : ''}><option value="editor" ${u.role === 'editor' ? 'selected' : ''}>編輯者</option><option value="admin" ${u.role === 'admin' ? 'selected' : ''}>管理者</option></select></label>
+    <span></span>
+    <label class="f"><span>新密碼（不改請留白）</span><input type="password" id="ep" autocomplete="new-password" minlength="8"></label>
+    <label class="f"><span>再輸入一次新密碼</span><input type="password" id="ep2" autocomplete="new-password" minlength="8"></label>
+  </div><div class="row"><button class="btn primary">儲存</button><button type="button" class="btn" id="ec">取消</button><span class="msg" id="em"></span></div></form></fieldset>`;
+  $('#ed').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  $('#ec').onclick = () => $('#ed').innerHTML = '';
+  $('#ef').onsubmit = async e => {
+    e.preventDefault(); const m = $('#em'); m.className = 'msg';
+    if($('#ep').value !== $('#ep2').value){ m.className = 'msg bad'; m.textContent = '兩次輸入的密碼不一樣。'; return; }
+    m.textContent = '儲存中…';
+    try{ drawAcct(await api('userSave', { user: u.user, pass: $('#ep').value, role: $('#er').value })); }
+    catch(err){ if(!relogin(err)){ m.className = 'msg bad'; m.textContent = err.message; } }
+  };
+}
+function openMyPass(){
+  if(!leave()) return;
+  $('#main').innerHTML = `<div class="acct"><div class="top"><h2>修改我的密碼</h2></div><fieldset><legend>${esc(me.user)}</legend><form id="mf">
+    <label class="f"><span>目前密碼</span><input type="password" id="mo" autocomplete="current-password" required></label>
+    <div class="grid2"><label class="f"><span>新密碼（至少 8 個字）</span><input type="password" id="mn" autocomplete="new-password" required minlength="8"></label>
+    <label class="f"><span>再輸入一次新密碼</span><input type="password" id="mn2" autocomplete="new-password" required minlength="8"></label></div>
+    <div class="row"><button class="btn primary">更新密碼</button><span class="msg" id="mm"></span></div></form></fieldset></div>`;
+  $('#mf').onsubmit = async e => {
+    e.preventDefault(); const m = $('#mm'); m.className = 'msg';
+    if($('#mn').value !== $('#mn2').value){ m.className = 'msg bad'; m.textContent = '兩次輸入的新密碼不一樣。'; return; }
+    m.textContent = '更新中…';
+    try{ await api('myPass', { old: $('#mo').value, pass: $('#mn').value }); $('#mf').reset(); m.className = 'msg ok'; m.textContent = '密碼已更新，下次登入請用新密碼。'; }
+    catch(err){ if(!relogin(err)){ m.className = 'msg bad'; m.textContent = err.message; } }
+  };
+}
+$('#acct').onclick = openAcct;
+$('#mypw').onclick = openMyPass;
 function collect(){
   const g = k => { const el = $('#main').querySelector(`[data-k="${k}"]`); return el ? el.value.trim() : ''; };
   const o = { t: g('t'), meta: g('meta'), one: g('one'), text: g('text'), quote: g('quote').split('\n').map(x => x.trim()).filter(Boolean), point: g('point'), ask: g('ask') };
@@ -226,14 +326,14 @@ document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => { if(b.
 $('#tog').onclick = () => { const s = $('#side'); s.classList.toggle('closed'); $('#tog').textContent = s.classList.contains('closed') ? '顯示站點清單' : '收起站點清單'; };
 $('#lf').onsubmit = async e => {
   e.preventDefault(); $('#le').textContent = '';
-  try{ const j = await api('login', { user: $('#lu').value.trim(), pass: $('#lp').value }); token = j.token; sessionStorage.setItem('yc-admin', token); $('#lp').value = ''; enter(j.user); }
+  try{ const j = await api('login', { user: $('#lu').value.trim(), pass: $('#lp').value }); token = j.token; sessionStorage.setItem('yc-admin', token); $('#lp').value = ''; enter(j); }
   catch(err){ $('#le').textContent = err.message; }
 };
-$('#out').onclick = () => { if(dirty && !confirm('還有沒儲存的修改，確定要登出嗎？')) return; sessionStorage.removeItem('yc-admin'); token = ''; dirty = false; cur = null; showLogin(); };
+$('#out').onclick = () => { me = { user: '', role: '' }; if(dirty && !confirm('還有沒儲存的修改，確定要登出嗎？')) return; sessionStorage.removeItem('yc-admin'); token = ''; dirty = false; cur = null; showLogin(); };
 addEventListener('beforeunload', e => { if(dirty){ e.preventDefault(); e.returnValue = ''; } });
 
 if(!API){ document.body.insertAdjacentHTML('beforeend', '<p class="empty">尚未設定試算表連線（config.js）。</p>'); return; }
-if(token) api('check').then(j => enter(j.user)).catch(() => { sessionStorage.removeItem('yc-admin'); token = ''; showLogin(); });
+if(token) api('check').then(j => enter(j)).catch(() => { sessionStorage.removeItem('yc-admin'); token = ''; showLogin(); });
 else showLogin();
 })();
 </script>
